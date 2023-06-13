@@ -2,7 +2,7 @@ from degiro_connector.trading.api import API
 from degiro_connector.trading.models.trading_pb2 import Credentials
 
 
-class TradingManager:
+class DegiroConnection:
     def __init__(self, config_dict):
         self.trading_api = None
         # SETUP CREDENTIALS
