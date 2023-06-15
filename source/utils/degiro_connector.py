@@ -9,6 +9,8 @@ class DegiroConnection:
         self.credentials = Credentials(
             username=config_dict["username"],
             password=config_dict["password"],
+            int_account=config_dict["int_account"],
+            totp_secret_key=config_dict["totp_secret_key"],
         )
 
     def __enter__(self):
