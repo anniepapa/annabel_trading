@@ -2,13 +2,15 @@ from degiro_connector.trading.api import API
 from degiro_connector.trading.models.trading_pb2 import Credentials
 
 
-class TradingManager:
+class DegiroConnection:
     def __init__(self, config_dict):
         self.trading_api = None
         # SETUP CREDENTIALS
         self.credentials = Credentials(
             username=config_dict["username"],
-            password=config_dict["password"],
+            password=config_dict["password"],  # TODO: password encryption
+            int_account=config_dict["int_account"],
+            totp_secret_key=config_dict["totp_secret_key"],
         )
 
     def __enter__(self):
