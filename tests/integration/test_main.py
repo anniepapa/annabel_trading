@@ -2,7 +2,7 @@ from main import main
 
 
 class TestMain:
-    def test_main(self):
+    def test_main_(self):
         trading_operator = main()
 
         assert trading_operator.price_down_20_percent is True
