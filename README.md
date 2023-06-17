@@ -2,6 +2,9 @@
 A trading robot and a long running app of investment built for Annie &amp; Bella
 It's initially about a command line tool which interacts with DEGIRO platform, also does basic trading using severl classical trading theories.
 
+I would like to pay tribute to Mr. Livermore from this childish app with full respect and expectation.
+
+Additionally, for my beloved daughters: Annie & Bella
 
 # TODO:
 Design document
