@@ -14,6 +14,7 @@ Functional:
 Technical:
 - data streaming, long running?
 - async & multiprocessing (multiple stocks in the same time)
+- separate quotecast api from trading operator
 
 - encrypted password
 - docstrings

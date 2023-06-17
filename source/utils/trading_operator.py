@@ -106,6 +106,9 @@ class TradingOperator:
         ]
 
     def get_products_from_str(self, keyword):
+        """
+        example: 'vOvlVO cAr'
+        """
         request = ProductSearch.RequestLookup(
             search_text=keyword,
             limit=10,
@@ -118,6 +121,15 @@ class TradingOperator:
         return pretty_table(products_dict)
 
     def get_products_from_ids(self, list_of_ids):
+        """_summary_
+        e.g: '20209472'
+
+        Args:
+            list_of_ids (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         request = ProductsInfo.Request()
         request.products.extend(list_of_ids)
 
