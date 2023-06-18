@@ -23,7 +23,6 @@ class TradingOperator:
     def __init__(self, trading_api=None):
         self.trading_api = trading_api
 
-        self.price_down_20_percent = False
         self.order_created = False
         self.order_confirmed = False
 
@@ -31,9 +30,16 @@ class TradingOperator:
         self.client_details = self._get_client_details()
         self.account_info = self._get_account_info()
 
-    def make_an_order(self, product_id, price, size):
+        self.target_product = None
+
+    def operate(self, ruled_product):
+        self.target_product = ruled_product
+
+    def make_an_order(self, product_id, price, size, action_type="B"):
+        action = self._decide_action(action_type)
+
         order = Order(
-            action=Order.Action.BUY,
+            action=action,
             order_type=Order.OrderType.LIMIT,
             price=price,
             product_id=product_id,
@@ -151,6 +157,23 @@ class TradingOperator:
     def _get_account_info(self):
         account_info_table = self.trading_api.get_account_info()
         return pretty_table(account_info_table)
+
+    @staticmethod
+    def _decide_action(action_type):
+        action_type = action_type.lower()
+
+        if action_type in ("b", "buy"):
+            return Order.Action.BUY
+
+        elif action_type in ("s", "sell"):
+            return Order.Action.SELL
+
+        else:
+            logger.warning(
+                f"{action_type} is unclear. It must be either B or S. "
+                f"Trading app will exit."
+            )
+            raise
 
     @staticmethod
     def make_an_order_buy(name):
