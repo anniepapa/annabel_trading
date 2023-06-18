@@ -1,1 +1,1 @@
-from livermore import LivermoreTradingRule  # noqa
+from .livermore import LivermoreTradingRule  # noqa

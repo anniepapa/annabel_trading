@@ -1,5 +1,6 @@
 import pytest
-from .utils import ProductConsumer
+from utils import ProductConsumer
+from models import LivermoreTradingRule
 
 
 @pytest.fixture
@@ -18,3 +19,9 @@ def fake_product():
     }
 
     return product
+
+
+@pytest.fixture
+def fake_livermore():
+    livermore = LivermoreTradingRule()
+    return livermore
