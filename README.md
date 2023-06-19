@@ -17,7 +17,7 @@ Functional:
 - combine livermore and RSI divergence
 
 Technical:
-- data streaming, long running?
+- data streaming, long running? https://softlandia.fi/en/blog/real-time-data-processing-with-python-technology-evaluation
 - async & multiprocessing (multiple stocks in the same time)
 - separate quotecast api from trading operator
 
