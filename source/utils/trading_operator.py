@@ -7,7 +7,10 @@ from degiro_connector.trading.models.trading_pb2 import (  # noqa
     ProductSearch,
     ProductsInfo,
     Order,
+    AccountOverview,
 )
+
+from utils import BaseRequestOnDate
 from logger import logger
 
 
@@ -71,45 +74,11 @@ class TradingOperator:
         else:
             logger.critical("failed ordering")
 
-    def get_history(
-        self, from_year, to_year, from_mon, to_mon, from_day, to_day
-    ):
-        from_date = OrdersHistory.Request.Date(
-            year=from_year, month=from_mon, day=from_day
-        )
-        to_date = OrdersHistory.Request.Date(
-            year=to_year, month=to_mon, day=to_day
-        )
-        request = OrdersHistory.Request(from_date=from_date, to_date=to_date)
+    def get_history(self, type_of_hist, **kwargs):
+        request = BaseRequestOnDate.create(type_of_hist, **kwargs)
+        request.get_requested_history(api=self.trading_api)
 
-        orders_history = self.trading_api.get_orders_history(
-            request=request,
-            raw=False,
-        )
-
-        return [dict(order) for order in orders_history.values]
-
-    def get_transactions_history(
-        self, from_year, to_year, from_mon, to_mon, from_day, to_day
-    ):
-        from_date = TransactionsHistory.Request.Date(
-            year=from_year, month=from_mon, day=from_day
-        )
-        to_date = TransactionsHistory.Request.Date(
-            year=to_year, month=to_mon, day=to_day
-        )
-        request = TransactionsHistory.Request(
-            from_date=from_date, to_date=to_date
-        )
-
-        transactions_history = self.trading_api.get_transactions_history(
-            request=request,
-            raw=False,
-        )
-
-        return [
-            dict(transaction) for transaction in transactions_history.values
-        ]
+        return request.history
 
     def get_products_from_str(self, keyword):
         """

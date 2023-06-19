@@ -4,6 +4,18 @@ from models import LivermoreTradingRule
 
 
 @pytest.fixture
+def fake_from_to_date():
+    return {
+        "from_year": 2022,
+        "to_year": 2022,
+        "from_mon": 7,
+        "to_mon": 7,
+        "from_day": 18,
+        "to_day": 19,
+    }
+
+
+@pytest.fixture
 def fake_product():
     product = ProductConsumer()
     product.realtime_dict = {

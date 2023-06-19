@@ -13,6 +13,8 @@ Design document
 Functional:
 - code & implement Jesse Lauriston Livermore rules of trading, unit testing to gurantee the logics 
 - read https://www.investopedia.com/articles/trading/09/legendary-trader-jesse-livermore.asp
+- read RSI (relative strength index) divergence: https://www.investopedia.com/ask/answers/012915/what-are-best-technical-indicators-complement-relative-strength-index-rsi.asp
+- combine livermore and RSI divergence
 
 Technical:
 - data streaming, long running?

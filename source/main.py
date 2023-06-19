@@ -1,7 +1,11 @@
 import json
 
 from logger import logger
-from utils import DegiroConnection, TradingOperator, ProductConsumer
+from utils import (
+    DegiroConnection,
+    TradingOperator,
+    ProductConsumer,
+)
 
 
 def main():
