@@ -9,6 +9,7 @@ license = "GNU"
 python = "^3.9"
 degiro-connector = "^2.0.23"
 cryptography = "^41.0.1"
+protobuf = "^4.23.3"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^6.0.0"

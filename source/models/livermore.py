@@ -6,7 +6,7 @@ I would also learn and combine livermore with RSI divergence indicator after liv
 Additionally, for my beloved daughters: Annie & Bella
 """
 
-from logger import logger
+from my_logger import logger
 
 
 class LivermoreTradingRule:
@@ -15,11 +15,12 @@ class LivermoreTradingRule:
     """
 
     def __init__(self) -> None:
+        self.get_account_latest_cash_total = 0
         self.match_buy = False
         self.match_sell = False
         self.price_down_20_percent = True  # TODO, placeholder for testing
 
-    def analyze(self, product, position=None):
+    def analyze_price(self, product, position=None):
         if self.price_down_20_percent:
             self.match_sell = True
         elif self.price_up_20_percent:

@@ -1,4 +1,4 @@
-from logger import logger
+from my_logger import logger
 
 from degiro_connector.quotecast.models.quotecast_pb2 import Quotecast
 from degiro_connector.quotecast.models.quotecast_parser import QuotecastParser

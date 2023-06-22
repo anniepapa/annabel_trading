@@ -1,3 +1,4 @@
+from my_logger import logger
 from degiro_connector.trading.models.trading_pb2 import (  # noqa
     OrdersHistory,
     TransactionsHistory,
@@ -91,4 +92,10 @@ class RequestAccountHistoryOverview(BaseRequestOnDate):
             raw=False,
         )
 
-        self.history = history.values["cashMovements"]
+        try:
+            self.history = history.values["cashMovements"]
+        except ValueError:
+            logger.error(
+                f"{self._HIST_TYPE}: {self.request} returns empty history"
+            )
+            self.history = []

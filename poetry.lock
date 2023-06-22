@@ -252,7 +252,7 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "protobuf"
-version = "4.23.2"
+version = "4.23.3"
 description = ""
 category = "main"
 optional = false
@@ -387,7 +387,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "9d6e91aafc17bfd26b8af737e2bbbcfcf67c1ba819aa70b5809d6c45a5bf2f0d"
+content-hash = "1bfa25cf1b63e773633c70ad73c0a1bc7fa7731cf06662fd52e0089a5eb68b2e"
 
 [metadata.files]
 black = []

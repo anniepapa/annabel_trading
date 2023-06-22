@@ -1,11 +1,9 @@
-from models import LivermoreTradingRule
-
-
 class TestLivermoreRule:
-    def test_livermorerule_analyze(self, fake_product):
-        livermore = LivermoreTradingRule()
-        livermore.analyze(fake_product)
+    def test_livermorerule_analyze_product_price(
+        self, fake_livermore, fake_product
+    ):
+        fake_livermore.analyze_price(fake_product)
 
-        assert livermore.price_down_20_percent is True
-        assert livermore.match_sell is True
-        assert livermore.match_buy is False
+        assert fake_livermore.price_down_20_percent is True
+        assert fake_livermore.match_sell is True
+        assert fake_livermore.match_buy is False

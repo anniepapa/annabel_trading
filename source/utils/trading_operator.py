@@ -2,16 +2,13 @@ import json
 
 import degiro_connector.core.helpers.pb_handler as payload_handler
 from degiro_connector.trading.models.trading_pb2 import (  # noqa
-    OrdersHistory,
-    TransactionsHistory,
     ProductSearch,
     ProductsInfo,
     Order,
-    AccountOverview,
 )
 
 from utils import BaseRequestOnDate
-from logger import logger
+from my_logger import logger
 
 
 def pretty_table(target_table):
@@ -78,7 +75,10 @@ class TradingOperator:
         request = BaseRequestOnDate.create(type_of_hist, **kwargs)
         request.get_requested_history(api=self.trading_api)
 
-        return request.history
+        if len(request.history):
+            return request.history
+
+        logger.warn(f"{request} returns empty history")
 
     def get_products_from_str(self, keyword):
         """
@@ -126,6 +126,15 @@ class TradingOperator:
     def _get_account_info(self):
         account_info_table = self.trading_api.get_account_info()
         return pretty_table(account_info_table)
+
+    @staticmethod
+    def get_account_overview(raw_cash_movements):
+        account_overview = {}
+
+        for item in raw_cash_movements:
+            account_overview[item["valueDate"]] = item["balance"]["total"]
+
+        return account_overview
 
     @staticmethod
     def _decide_action(action_type):
