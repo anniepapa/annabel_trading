@@ -8,6 +8,14 @@ from utils import (
 )
 
 
+def pretty_table(target_table):
+    return json.dumps(
+        target_table,
+        sort_keys=True,
+        indent=4,
+    )
+
+
 def main():
     with open("config/config.json") as config_file:
         config_dict = json.load(config_file)
@@ -19,26 +27,20 @@ def main():
     with DegiroConnection(config_dict) as trading_api:
         trading_operator = TradingOperator(trading_api)
 
-        raw_account_cash_movements = trading_operator.get_history(
-            "account",
-            from_year=2023,
-            to_year=2023,
-            from_mon=6,
-            to_mon=6,
-            from_day=13,
-            to_day=21,
-        )
-        # account_overview = trading_operator.get_account_overview(
-        #     raw_account_cash_movements
+        # raw_account_cash_movements = trading_operator.get_history_response(
+        #     "cash",
+        #     from_year=2023,
+        #     to_year=2023,
+        #     from_mon=6,
+        #     to_mon=6,
+        #     from_day=13,
+        #     to_day=21,
         # )
 
-        logger.info(raw_account_cash_movements)
+        # logger.info(pretty_table(raw_account_cash_movements.content))
 
-        # for item in raw_account_cash_movements["cashMovements"]:
-        #     print(type(item))
-
-        prd = trading_operator.get_products_from_str("volvo")
-        logger.info(prd)
+        # prd = trading_operator.get_products_from_str("volvo")
+        # logger.info(prd)
 
         trading_operator.price_down_20_percent = True
         trading_operator.order_created = True

@@ -1,5 +1,3 @@
-import json
-
 import degiro_connector.core.helpers.pb_handler as payload_handler
 from degiro_connector.trading.models.trading_pb2 import (  # noqa
     ProductSearch,
@@ -9,14 +7,6 @@ from degiro_connector.trading.models.trading_pb2 import (  # noqa
 
 from utils import BaseRequestOnDate
 from my_logger import logger
-
-
-def pretty_table(target_table):
-    return json.dumps(
-        target_table,
-        sort_keys=True,
-        indent=4,
-    )
 
 
 class TradingOperator:
@@ -71,14 +61,20 @@ class TradingOperator:
         else:
             logger.critical("failed ordering")
 
-    def get_history(self, type_of_hist, **kwargs):
+    def get_history_response(self, type_of_hist, **kwargs):
+        """Response of request of history / cash report
+
+        Args:
+            type_of_hist (_type_): _description_
+
+        Returns:
+            _type_: request object with attribute: .history or .content
+            .content is only for the type: "cash"
+        """
         request = BaseRequestOnDate.create(type_of_hist, **kwargs)
-        request.get_requested_history(api=self.trading_api)
+        request.get_response(api=self.trading_api)
 
-        if len(request.history):
-            return request.history
-
-        logger.warn(f"{request} returns empty history")
+        return request
 
     def get_products_from_str(self, keyword):
         """
@@ -93,7 +89,7 @@ class TradingOperator:
 
         products = self.trading_api.product_search(request=request)
         products_dict = payload_handler.message_to_dict(message=products)
-        return pretty_table(products_dict)
+        return products_dict
 
     def get_products_from_ids(self, list_of_ids):
         """_summary_
@@ -117,24 +113,35 @@ class TradingOperator:
 
     def _get_config(self):
         config_table = self.trading_api.get_config()
-        return pretty_table(config_table)
+        return config_table
 
     def _get_client_details(self):
         client_details_table = self.trading_api.get_client_details()
-        return pretty_table(client_details_table)
+        return client_details_table
 
     def _get_account_info(self):
         account_info_table = self.trading_api.get_account_info()
-        return pretty_table(account_info_table)
+        return account_info_table
 
     @staticmethod
     def get_account_overview(raw_cash_movements):
         account_overview = {}
 
         for item in raw_cash_movements:
-            account_overview[item["valueDate"]] = item["balance"]["total"]
+            movement_id = "_".join(
+                (item["date"], str(item["id"]), item["currency"])
+            )
+            account_overview[movement_id] = {
+                "value_date": item["valueDate"],
+                "balance": item["balance"]["total"],
+                "type": item["type"],
+                "description": item["description"],
+            }
 
-        return account_overview
+        account_overview = sorted(
+            account_overview.items(), key=lambda x: x[0], reverse=True
+        )
+        return dict(account_overview)
 
     @staticmethod
     def _decide_action(action_type):
