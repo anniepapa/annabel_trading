@@ -1,4 +1,4 @@
-from logger import logger
+from my_logger import logger
 
 from degiro_connector.quotecast.models.quotecast_pb2 import Quotecast
 from degiro_connector.quotecast.models.quotecast_parser import QuotecastParser
@@ -6,12 +6,12 @@ from degiro_connector.quotecast.api import API as QuotecastAPI
 
 
 class FinancialProductConsumer:
-    def __init__(self, user_token):
+    def __init__(self, user_token=None):
         self.quotecast_api = self._connect(user_token)
         self.realtime_dict = None
         self.realtime_df = None
 
-    def subscribe(self, *vwdids):
+    def subscribe(self, vwdid):
         """_summary_
 
         Args:
@@ -24,26 +24,25 @@ class FinancialProductConsumer:
         quotecast_parser = QuotecastParser()
         request = Quotecast.Request()
 
-        for vwdid in vwdids:
-            request.subscriptions[vwdid].extend(
-                [
-                    "LastDate",
-                    "LastTime",
-                    "LastPrice",
-                    "LastVolume",
-                    "AskPrice",
-                    "AskVolume",
-                    "LowPrice",
-                    "HighPrice",
-                    "BidPrice",
-                    "BidVolume",
-                ]
-            )
+        request.subscriptions[vwdid].extend(
+            [
+                "LastDate",
+                "LastTime",
+                "LastPrice",
+                "LastVolume",
+                "AskPrice",
+                "AskVolume",
+                "LowPrice",
+                "HighPrice",
+                "BidPrice",
+                "BidVolume",
+            ]
+        )
 
         self.quotecast_api.subscribe(request=request)
 
         logger.info(
-            f"vwdIds: {vwdids} have been subscribed by {self.quotecast_api}"
+            f"vwdIds: {vwdid} have been subscribed by {self.quotecast_api}"
         )
 
         # ticker_dict = self.quotecast_api.fetch_metrics(
@@ -56,7 +55,7 @@ class FinancialProductConsumer:
         self.realtime_dict = quotecast_parser.ticker_dict
         self.realtime_df = quotecast_parser.ticker_df
 
-        logger.info(f"The price of {vwdids} have been fetched")
+        logger.info(f"The price of {vwdid} have been fetched")
 
     def _connect(self, user_token):
         quotecast_api = QuotecastAPI(user_token=user_token)
