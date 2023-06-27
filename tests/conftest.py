@@ -93,11 +93,15 @@ def fake_account_cash_movements_report():
 def target_meta():
     return {
         "name": "VOLVO CAR AB",
-        "latest_price": 42.77,
+        "id": 20209472,
+        "vwd_id": 956683606,
         "stock_currency": "SEK",
+        "close_price": 42.76,
+        "close_price_date": "2023-06-23",
+        "last_price": 42.77,
         "fx_rate": 11.5833,
-        "trans_fee": 4.3,
-        "latest_balance": 100,
+        "trans_fee": 4.9,
+        "last_balance": 100,
     }
 
 
@@ -105,11 +109,15 @@ def target_meta():
 def target_meta_negative():
     return {
         "name": "VOLVO CAR AB",
-        "latest_price": 42.77,
+        "id": 20209472,
+        "vwd_id": 956683606,
         "stock_currency": "SEK",
+        "close_price": 42.76,
+        "close_price_date": "2023-06-23",
+        "last_price": 42.77,
         "fx_rate": 11.5833,
-        "trans_fee": 4.3,
-        "latest_balance": 7.99,
+        "trans_fee": 4.9,
+        "last_balance": 7.99,
     }
 
 

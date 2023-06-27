@@ -1,18 +1,22 @@
 import json
 
 from my_logger import logger
+from toolkits import utc_to_cet, decimalize
 from utils import (
     DegiroConnection,
     TradingOperator,
     ProductConsumer,
 )
+from models import TradingAnalyzor
 
 
-def pretty_table(target_table):
-    return json.dumps(
-        target_table,
-        sort_keys=True,
-        indent=4,
+def update_prod_meta(operator, consumer):
+    consumer.subscribe(operator.prod_meta["vwd_id"])
+    last_price = decimalize(consumer.realtime_dict["LastPrice"])
+    datetime = utc_to_cet(consumer.realtime_dict["response_datetime"])
+
+    operator.prod_meta.update(
+        {"last_price": last_price, "response_datetime": datetime}
     )
 
 
@@ -20,33 +24,24 @@ def main():
     with open("config/config.json") as config_file:
         config_dict = json.load(config_file)
 
-    product_consumer = ProductConsumer(config_dict["user_token"])
-    product_consumer.subscribe("956683606")
-    logger.info(product_consumer.realtime_dict)
-
     with DegiroConnection(config_dict) as trading_api:
         trading_operator = TradingOperator(trading_api)
+        trading_operator.initiate_prod_meta_from_str("VolVo CAR Ab")
+        prod_consumer = ProductConsumer(config_dict["user_token"])
 
-        # raw_account_cash_movements = trading_operator.get_history_response(
-        #     "cash",
-        #     from_year=2023,
-        #     to_year=2023,
-        #     from_mon=6,
-        #     to_mon=6,
-        #     from_day=13,
-        #     to_day=21,
-        # )
+        update_prod_meta(trading_operator, prod_consumer)
+        logger.info(trading_operator.prod_meta)
 
-        # logger.info(pretty_table(raw_account_cash_movements.content))
+        analyzor = TradingAnalyzor()
+        analyzor.analyze_capacity(**trading_operator.prod_meta)
+        analyzor.act_on_capacity()
+        logger.info(analyzor.cashable_state)
 
-        # prd = trading_operator.get_products_from_str("volvo")
-        # logger.info(prd)
+        # analyzor.price_down_20_percent = True
+        # analyzor.order_created = True
+        # analyzor.order_confirmed = True
 
-        trading_operator.price_down_20_percent = True
-        trading_operator.order_created = True
-        trading_operator.order_confirmed = True
-
-        return trading_operator
+        # return trading_operator
 
 
 if __name__ == "__main__":

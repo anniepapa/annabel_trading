@@ -17,5 +17,5 @@ class TestTradingAnalyzor:
         return fake_analyzor
 
     def test_act_on_analysis(self, test_analyze_insufficient_capacity):
-        capacity_state = test_analyze_insufficient_capacity.act_on_capacity()
-        assert capacity_state is False
+        test_analyze_insufficient_capacity.act_on_capacity()
+        assert test_analyze_insufficient_capacity.cashable_state is False
