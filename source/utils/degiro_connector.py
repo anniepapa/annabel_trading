@@ -3,6 +3,11 @@ from degiro_connector.trading.models.trading_pb2 import Credentials
 
 
 class DegiroConnection:
+    __slot__ = (
+        "trading_api",
+        "credentials",
+    )
+
     def __init__(self, config_dict):
         self.trading_api = None
         # SETUP CREDENTIALS

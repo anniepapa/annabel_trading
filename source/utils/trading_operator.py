@@ -1,3 +1,6 @@
+from decimal import Decimal
+from datetime import datetime, timedelta
+
 import degiro_connector.core.helpers.pb_handler as payload_handler
 from degiro_connector.trading.models.trading_pb2 import (  # noqa
     ProductSearch,
@@ -7,9 +10,20 @@ from degiro_connector.trading.models.trading_pb2 import (  # noqa
 
 from utils import BaseRequestOnDate
 from my_logger import logger
+from toolkits import decimalize
 
 
 class TradingOperator:
+    __slots__ = (
+        "trading_api",
+        "order_created",
+        "order_confirmed",
+        "config",
+        "client_details",
+        "account_info",
+        "prod_meta",
+    )
+
     def __init__(self, trading_api=None):
         self.trading_api = trading_api
 
@@ -20,10 +34,39 @@ class TradingOperator:
         self.client_details = self._get_client_details()
         self.account_info = self._get_account_info()
 
-        self.target_product = None
+        self.prod_meta = {}
 
-    def operate(self, ruled_product):
-        self.target_product = ruled_product
+    def initiate_prod_meta_from_str(self, keyword):
+        """
+        example: 'vOvlVO cAr'
+        """
+        request = ProductSearch.RequestLookup(
+            search_text=keyword,
+            limit=10,
+            offset=0,
+            product_type_id=1,
+        )
+
+        products = self.trading_api.product_search(request=request)
+        prods = payload_handler.message_to_dict(message=products)["products"]
+
+        if len(prods) > 1:
+            logger.warn(
+                f"{keyword} is not unique, multiple products are retrived"
+            )
+
+        self.prod_meta = {
+            "name": prods[0]["name"],
+            "id": prods[0]["id"],
+            "vwd_id": prods[0]["vwdId"],
+            "stock_currency": prods[0]["currency"],
+            "close_price": prods[0]["closePrice"],
+            "close_price_date": prods[0]["closePriceDate"],
+            "trans_fee": Decimal(4.9),
+            "last_balance": self._get_last_balance(),
+        }
+
+        self.prod_meta.update({"fx_rate": self._get_fx_rate()})
 
     def make_an_order(self, product_id, price, size, action_type="B"):
         action = self._decide_action(action_type)
@@ -76,21 +119,6 @@ class TradingOperator:
 
         return request
 
-    def get_products_from_str(self, keyword):
-        """
-        example: 'vOvlVO cAr'
-        """
-        request = ProductSearch.RequestLookup(
-            search_text=keyword,
-            limit=10,
-            offset=0,
-            product_type_id=1,
-        )
-
-        products = self.trading_api.product_search(request=request)
-        products_dict = payload_handler.message_to_dict(message=products)
-        return products_dict
-
     def get_products_from_ids(self, list_of_ids):
         """_summary_
         e.g: '20209472'
@@ -111,6 +139,11 @@ class TradingOperator:
 
         return products["data"].values()
 
+    def _get_fx_rate(self):
+        fx_code = "EUR" + self.prod_meta["stock_currency"]
+        fx_rates = self.account_info["currencyPairs"]
+        return decimalize(fx_rates[fx_code]["price"])
+
     def _get_config(self):
         config_table = self.trading_api.get_config()
         return config_table
@@ -121,7 +154,38 @@ class TradingOperator:
 
     def _get_account_info(self):
         account_info_table = self.trading_api.get_account_info()
-        return account_info_table
+        return account_info_table["data"]
+
+    def _get_last_balance(self):
+        today = datetime.now()
+        to_year, to_mon, to_day = today.year, today.month, today.day
+        content_exists = []
+        d = 0
+
+        while not content_exists:
+            prev_day = today - timedelta(days=d)
+            from_year, from_mon, from_day = (
+                prev_day.year,
+                prev_day.month,
+                prev_day.day,
+            )
+            content_exists = self.get_history_response(
+                "cash",
+                from_year=from_year,
+                to_year=to_year,
+                from_mon=from_mon,
+                to_mon=to_mon,
+                from_day=from_day,
+                to_day=to_day,
+            ).content
+
+            d += 1
+
+        logger.info(
+            f"Last cash movements(balance) was on {today-timedelta(days=d-1)}"
+        )
+
+        return decimalize(content_exists[0][""].replace(",", "."))
 
     @staticmethod
     def get_account_overview(raw_cash_movements):
@@ -159,9 +223,3 @@ class TradingOperator:
                 f"Trading app will exit."
             )
             raise
-
-    @staticmethod
-    def make_an_order_buy(name):
-        logger.info("Ahhhh, a static method")
-        order_is_bought = True
-        return order_is_bought

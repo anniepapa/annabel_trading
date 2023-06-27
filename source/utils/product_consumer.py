@@ -6,6 +6,12 @@ from degiro_connector.quotecast.api import API as QuotecastAPI
 
 
 class FinancialProductConsumer:
+    __slot__ = (
+        "quotecast_api",
+        "realtime_dict",
+        "realtime_df",
+    )
+
     def __init__(self, user_token=None):
         self.quotecast_api = self._connect(user_token)
         self.realtime_dict = None
@@ -45,14 +51,10 @@ class FinancialProductConsumer:
             f"vwdIds: {vwdid} have been subscribed by {self.quotecast_api}"
         )
 
-        # ticker_dict = self.quotecast_api.fetch_metrics(
-        #     request=request,
-        # )
-
         quotecast_parser.put_quotecast(
             quotecast=self.quotecast_api.fetch_data()
         )
-        self.realtime_dict = quotecast_parser.ticker_dict
+        self.realtime_dict = quotecast_parser.ticker_dict[vwdid]
         self.realtime_df = quotecast_parser.ticker_df
 
         logger.info(f"The price of {vwdid} have been fetched")
