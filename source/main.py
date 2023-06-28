@@ -1,4 +1,5 @@
 import json
+import fire
 
 from my_logger import logger
 from toolkits import utc_to_cet, decimalize
@@ -12,7 +13,10 @@ from models import TradingAnalyzor
 
 def update_prod_meta(operator, consumer):
     consumer.subscribe(operator.prod_meta["vwd_id"])
-    last_price = decimalize(consumer.realtime_dict["LastPrice"])
+    last_price = decimalize(
+        consumer.realtime_dict.get("LastPrice")
+        or consumer.realtime_dict.get("AskPrice")
+    )
     datetime = utc_to_cet(consumer.realtime_dict["response_datetime"])
 
     operator.prod_meta.update(
@@ -20,13 +24,13 @@ def update_prod_meta(operator, consumer):
     )
 
 
-def main():
+def main(stock_name):
     with open("config/config.json") as config_file:
         config_dict = json.load(config_file)
 
     with DegiroConnection(config_dict) as trading_api:
         trading_operator = TradingOperator(trading_api)
-        trading_operator.initiate_prod_meta_from_str("VolVo CAR Ab")
+        trading_operator.initiate_prod_meta_from_str(stock_name)
         prod_consumer = ProductConsumer(config_dict["user_token"])
 
         update_prod_meta(trading_operator, prod_consumer)
@@ -45,4 +49,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    fire.Fire(main)

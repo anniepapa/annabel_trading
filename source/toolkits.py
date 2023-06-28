@@ -21,5 +21,5 @@ def utc_to_cet(datetime_str):
     return datetime.strftime(cet, "%Y-%m-%dT%H:%M:%S")
 
 
-def decimalize(value, prec=".01"):
+def decimalize(value, prec=".0001"):
     return Decimal(value).quantize(Decimal(prec), rounding=ROUND_UP)
