@@ -23,3 +23,9 @@ def utc_to_cet(datetime_str):
 
 def decimalize(value, prec=".0001"):
     return Decimal(value).quantize(Decimal(prec), rounding=ROUND_UP)
+
+
+def get_last_valuta_balance(content):
+    for item in content:
+        if item["Omschrijving"] == "Valuta Debitering":
+            return item[""].replace(",", ".")

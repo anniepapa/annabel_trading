@@ -16,7 +16,6 @@ def sort_dict_string_content(string_csv):
         key=lambda x: (x["Datum"], -Decimal(x[""].replace(",", "."))),
         reverse=True,
     )
-
     return content
 
 

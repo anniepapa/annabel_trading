@@ -25,6 +25,8 @@ def update_prod_meta(operator, consumer):
 
 
 def main(stock_name):
+    logger.info(f"Start automatic trading for the stock: {stock_name}")
+
     with open("config/config.json") as config_file:
         config_dict = json.load(config_file)
 

@@ -10,7 +10,7 @@ from degiro_connector.trading.models.trading_pb2 import (  # noqa
 
 from utils import BaseRequestOnDate
 from my_logger import logger
-from toolkits import decimalize
+from toolkits import decimalize, get_last_valuta_balance
 
 
 class TradingOperator:
@@ -185,7 +185,8 @@ class TradingOperator:
             f"Last cash movements(balance) was on {today-timedelta(days=d-1)}"
         )
 
-        return decimalize(content_exists[0][""].replace(",", "."))
+        content_of_last_balance = get_last_valuta_balance(content_exists)
+        return decimalize(content_of_last_balance.replace(",", "."))
 
     @staticmethod
     def get_account_overview(raw_cash_movements):
