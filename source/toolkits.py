@@ -25,7 +25,7 @@ def decimalize(value, prec=".0001"):
     return Decimal(value).quantize(Decimal(prec), rounding=ROUND_UP)
 
 
-def get_last_valuta_balance(content):
+def get_last_valuta_balance(content, key_name="description"):
     for item in content:
-        if item["Omschrijving"] == "Valuta Debitering":
-            return item[""].replace(",", ".")
+        if item[key_name] == "Valuta Debitering":
+            return item.get("balance") or item.get("")

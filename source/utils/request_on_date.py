@@ -97,9 +97,9 @@ class RequestAccountHistoryOverview(BaseRequestOnDate):
             raw=False,
         )
 
-        try:
-            self.history = history.values["cashMovements"]
-        except ValueError:
+        self.history = history.values
+
+        if not self.history:
             logger.error(
                 f"{self._HIST_TYPE}: {self.request} returns empty history"
             )
@@ -113,7 +113,6 @@ class RequestCashAccountReport(BaseRequestOnDate):
     def __init__(self) -> None:
         super().__init__()
         self.format = None
-        self.content = None
 
     def get_response(self, api):
         report = api.get_cash_account_report(
@@ -122,4 +121,4 @@ class RequestCashAccountReport(BaseRequestOnDate):
         )
 
         self.format = report.Format.Name(report.format)
-        self.content = sort_dict_string_content(report.content)
+        self.history = sort_dict_string_content(report.content)
