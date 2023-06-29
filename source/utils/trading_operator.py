@@ -162,6 +162,7 @@ class TradingOperator:
         cash_movements = self.get_movements_from_account_overview(
             account_overview["cashMovements"]
         )
+
         last_balance = get_last_valuta_balance(cash_movements)
 
         return decimalize(last_balance)

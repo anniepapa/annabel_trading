@@ -26,6 +26,8 @@ def decimalize(value, prec=".0001"):
 
 
 def get_last_valuta_balance(content, key_name="description"):
+    identifier = ("Valuta Debitering", "Reservation iDEAL / Sofort Deposit")
+
     for item in content:
-        if item[key_name] == "Valuta Debitering":
+        if item[key_name] in identifier:
             return item.get("balance") or item.get("")

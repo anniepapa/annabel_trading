@@ -43,11 +43,11 @@ def main(stock_name):
         analyzor.act_on_capacity()
         logger.info(analyzor.cashable_state)
 
-        # analyzor.price_down_20_percent = True
-        # analyzor.order_created = True
-        # analyzor.order_confirmed = True
+        analyzor.price_down_20_percent = True
+        analyzor.order_created = True
+        analyzor.order_confirmed = True
 
-        # return trading_operator
+        return trading_operator
 
 
 if __name__ == "__main__":
