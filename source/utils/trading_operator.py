@@ -10,7 +10,7 @@ from degiro_connector.trading.models.trading_pb2 import (  # noqa
 
 from utils import BaseRequestOnDate
 from my_logger import logger
-from toolkits import decimalize
+from toolkits import decimalize, get_last_valuta_balance
 
 
 class TradingOperator:
@@ -18,8 +18,8 @@ class TradingOperator:
         "trading_api",
         "order_created",
         "order_confirmed",
-        "config",
-        "client_details",
+        # "config",
+        # "client_details",
         "account_info",
         "prod_meta",
     )
@@ -30,8 +30,8 @@ class TradingOperator:
         self.order_created = False
         self.order_confirmed = False
 
-        self.config = self._get_config()
-        self.client_details = self._get_client_details()
+        # self.config = self._get_config()
+        # self.client_details = self._get_client_details()
         self.account_info = self._get_account_info()
 
         self.prod_meta = {}
@@ -49,21 +49,22 @@ class TradingOperator:
 
         products = self.trading_api.product_search(request=request)
         prods = payload_handler.message_to_dict(message=products)["products"]
+        prod = prods[0]
 
         if len(prods) > 1:
-            logger.warn(
+            logger.warning(
                 f"{keyword} is not unique, multiple products are retrived"
             )
 
         self.prod_meta = {
-            "name": prods[0]["name"],
-            "id": prods[0]["id"],
-            "vwd_id": prods[0]["vwdId"],
-            "stock_currency": prods[0]["currency"],
-            "close_price": prods[0]["closePrice"],
-            "close_price_date": prods[0]["closePriceDate"],
+            "name": prod["name"],
+            "id": prod["id"],
+            "vwd_id": prod["vwdId"],
+            "stock_currency": prod["currency"],
+            "close_price": prod["closePrice"],
+            "close_price_date": prod["closePriceDate"],
             "trans_fee": Decimal(4.9),
-            "last_balance": self._get_last_balance(),
+            "last_balance": self._get_last_balance_via_account_overview(),
         }
 
         self.prod_meta.update({"fx_rate": self._get_fx_rate()})
@@ -156,56 +157,73 @@ class TradingOperator:
         account_info_table = self.trading_api.get_account_info()
         return account_info_table["data"]
 
-    def _get_last_balance(self):
+    def _get_last_balance_via_account_overview(self):
+        account_overview = self.__get_last_balance_record("account")
+
+        cash_movements = self.get_movements_from_account_overview(
+            account_overview["cashMovements"]
+        )
+
+        last_balance = get_last_valuta_balance(cash_movements)
+
+        return decimalize(last_balance)
+
+    def _get_last_balance_via_cash_report(self):
+        content_exists = self.__get_last_balance_record("cash")
+
+        content_of_last_balance = get_last_valuta_balance(
+            content_exists, key_name="Omschrijving"
+        )
+
+        return decimalize(content_of_last_balance.replace(",", "."))
+
+    def __get_last_balance_record(self, type_name):
         today = datetime.now()
         to_year, to_mon, to_day = today.year, today.month, today.day
-        content_exists = []
+        cash_movements = []
         d = 0
 
-        while not content_exists:
+        while not cash_movements:
             prev_day = today - timedelta(days=d)
             from_year, from_mon, from_day = (
                 prev_day.year,
                 prev_day.month,
                 prev_day.day,
             )
-            content_exists = self.get_history_response(
-                "cash",
+            cash_movements = self.get_history_response(
+                type_name,
                 from_year=from_year,
                 to_year=to_year,
                 from_mon=from_mon,
                 to_mon=to_mon,
                 from_day=from_day,
                 to_day=to_day,
-            ).content
+            ).history
 
             d += 1
 
         logger.info(
             f"Last cash movements(balance) was on {today-timedelta(days=d-1)}"
         )
-
-        return decimalize(content_exists[0][""].replace(",", "."))
+        return cash_movements
 
     @staticmethod
-    def get_account_overview(raw_cash_movements):
-        account_overview = {}
+    def get_movements_from_account_overview(raw_cash_movements):
+        account_overview = []
 
         for item in raw_cash_movements:
-            movement_id = "_".join(
-                (item["date"], str(item["id"]), item["currency"])
+            account_overview.append(
+                {
+                    "value_date": item["valueDate"],
+                    "balance": item["balance"]["total"],
+                    "type": item["type"],
+                    "description": item["description"],
+                }
             )
-            account_overview[movement_id] = {
-                "value_date": item["valueDate"],
-                "balance": item["balance"]["total"],
-                "type": item["type"],
-                "description": item["description"],
-            }
 
-        account_overview = sorted(
-            account_overview.items(), key=lambda x: x[0], reverse=True
+        return sorted(
+            account_overview, key=lambda x: x["value_date"], reverse=True
         )
-        return dict(account_overview)
 
     @staticmethod
     def _decide_action(action_type):

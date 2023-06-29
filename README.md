@@ -28,6 +28,11 @@ Technical:
 - abstract get_orders_history & get_transactions_history
 
 Test:
-- poetry run pytest --cov-report term html:cov_html --cov=. tests/
+- poetry run pytest --cov-report html:cov_html --cov=. tests/
 - python -m http.server
 - check report in browser: http://localhost:8000/cov_html/
+
+
+Virtualize:
+- docker build -t annabel_trading --rm .
+- docker run -it --rm annabel_trading

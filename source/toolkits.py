@@ -21,5 +21,13 @@ def utc_to_cet(datetime_str):
     return datetime.strftime(cet, "%Y-%m-%dT%H:%M:%S")
 
 
-def decimalize(value, prec=".01"):
+def decimalize(value, prec=".0001"):
     return Decimal(value).quantize(Decimal(prec), rounding=ROUND_UP)
+
+
+def get_last_valuta_balance(content, key_name="description"):
+    identifier = ("Valuta Debitering", "Reservation iDEAL / Sofort Deposit")
+
+    for item in content:
+        if item[key_name] in identifier:
+            return item.get("balance") or item.get("")

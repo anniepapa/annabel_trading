@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  volvo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: annabel_trading
+    command: ["VOLVO CAR AB"]
+
+  tesla:
+    image: annabel_trading
+    command: ["TESLA"]
+    depends_on:
+      - volvo
+
+  faraday:
+    image: annabel_trading
+    command: ["FARADAY"]
+    depends_on:
+      - volvo
