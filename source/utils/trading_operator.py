@@ -18,8 +18,8 @@ class TradingOperator:
         "trading_api",
         "order_created",
         "order_confirmed",
-        "config",
-        "client_details",
+        # "config",
+        # "client_details",
         "account_info",
         "prod_meta",
     )
@@ -30,8 +30,8 @@ class TradingOperator:
         self.order_created = False
         self.order_confirmed = False
 
-        self.config = self._get_config()
-        self.client_details = self._get_client_details()
+        # self.config = self._get_config()
+        # self.client_details = self._get_client_details()
         self.account_info = self._get_account_info()
 
         self.prod_meta = {}
@@ -49,6 +49,7 @@ class TradingOperator:
 
         products = self.trading_api.product_search(request=request)
         prods = payload_handler.message_to_dict(message=products)["products"]
+        prod = prods[0]
 
         if len(prods) > 1:
             logger.warning(
@@ -56,12 +57,12 @@ class TradingOperator:
             )
 
         self.prod_meta = {
-            "name": prods[0]["name"],
-            "id": prods[0]["id"],
-            "vwd_id": prods[0]["vwdId"],
-            "stock_currency": prods[0]["currency"],
-            "close_price": prods[0]["closePrice"],
-            "close_price_date": prods[0]["closePriceDate"],
+            "name": prod["name"],
+            "id": prod["id"],
+            "vwd_id": prod["vwdId"],
+            "stock_currency": prod["currency"],
+            "close_price": prod["closePrice"],
+            "close_price_date": prod["closePriceDate"],
             "trans_fee": Decimal(4.9),
             "last_balance": self._get_last_balance_via_account_overview(),
         }

@@ -7,5 +7,6 @@ ENV PYTHONPATH=${PYTHONPATH}:source/
 RUN pip3 install poetry
 RUN poetry config virtualenvs.create false
 RUN poetry install
+
 ENTRYPOINT ["python", "source/main.py"]
 RUN apt-get update && apt-get install -y bash
