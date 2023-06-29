@@ -1,5 +1,5 @@
 import json
-import fire
+from fire import Fire
 
 from my_logger import logger
 from toolkits import utc_to_cet, decimalize
@@ -47,8 +47,6 @@ def main(stock_name):
         analyzor.order_created = True
         analyzor.order_confirmed = True
 
-        return trading_operator
-
 
 if __name__ == "__main__":
-    fire.Fire(main)
+    Fire(main)
