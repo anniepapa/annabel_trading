@@ -90,6 +90,96 @@ def fake_account_cash_movements_report():
 
 
 @pytest.fixture
+def fake_cash_movements_ideal_deposit_positive():
+    return [
+        {
+            "value_date": "2023-06-29T23:59:59+02:00",
+            "balance": 138.92,
+            "type": "CASH_TRANSACTION",
+            "description": "iDEAL Deposit",
+        },
+        {
+            "value_date": "2023-06-29T23:59:59+02:00",
+            "balance": -121.08,
+            "type": "CASH_TRANSACTION",
+            "description": "Reservation iDEAL / Sofort Deposit",
+        },
+    ]
+
+
+@pytest.fixture
+def fake_cash_movements_valuta_debitering_positive():
+    return [
+        {
+            "value_date": "2023-06-29T17:19:37+02:00",
+            "balance": 138.92,
+            "type": "FLATEX_CASH_SWEEP",
+            "description": "Overboeking van uw geldrekening bij flatexDEGIRO Bank 33 EUR",  # noqa
+        },
+        {
+            "value_date": "2023-06-29T17:19:37+02:00",
+            "balance": 171.92,
+            "type": "FLATEX_CASH_SWEEP",
+            "description": "Degiro Cash Sweep Transfer",
+        },
+        {
+            "value_date": "2023-06-29T16:07:46+02:00",
+            "balance": 0.0,
+            "type": "CASH_TRANSACTION",
+            "description": "Valuta Creditering",
+        },
+        {
+            "value_date": "2023-06-29T16:07:46+02:00",
+            "balance": 138.92,
+            "type": "CASH_TRANSACTION",
+            "description": "Valuta Debitering",
+        },
+        {
+            "value_date": "2023-06-29T16:07:46+02:00",
+            "balance": 375.0,
+            "type": "CASH_TRANSACTION",
+            "description": "DEGIRO Transactiekosten en/of kosten van derden",
+        },
+        {
+            "value_date": "2023-06-29T16:07:46+02:00",
+            "balance": -256.0,
+            "type": "TRANSACTION",
+            "description": "Koop 1 @ 256 USD",
+        },
+        {
+            "value_date": "2023-06-29T06:47:45+02:00",
+            "balance": 377.0,
+            "type": "CASH_TRANSACTION",
+            "description": "Reservation iDEAL / Sofort Deposit",
+        },
+        {
+            "value_date": "2023-06-28T23:59:59+02:00",
+            "balance": 377.0,
+            "type": "FLATEX_CASH_SWEEP",
+            "description": "Overboeking van uw geldrekening bij flatexDEGIRO Bank 1,6 EUR",  # noqa
+        },
+        {
+            "value_date": "2023-06-28T23:59:59+02:00",
+            "balance": 378.6,
+            "type": "FLATEX_CASH_SWEEP",
+            "description": "Degiro Cash Sweep Transfer",
+        },
+        {
+            "value_date": "2023-06-28T23:59:59+02:00",
+            "balance": 117.0,
+            "type": "CASH_TRANSACTION",
+            "description": "iDEAL Deposit",
+        },
+        {
+            "value_date": "2023-06-28T23:59:59+02:00",
+            "balance": -33.0,
+            "type": "CASH_TRANSACTION",
+            "description": "Reservation iDEAL / Sofort Deposit",
+        },
+    ]
+
+
+@pytest.fixture
 def target_meta():
     return {
         "name": "VOLVO CAR AB",

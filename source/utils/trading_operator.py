@@ -1,4 +1,3 @@
-from decimal import Decimal
 from datetime import datetime, timedelta
 
 import degiro_connector.core.helpers.pb_handler as payload_handler
@@ -60,7 +59,7 @@ class TradingOperator:
                     "stock_currency": prod["currency"],
                     "close_price": prod["closePrice"],
                     "close_price_date": prod["closePriceDate"],
-                    "trans_fee": Decimal(4.9),
+                    "trans_fee": decimalize(4.9),
                     "last_balance": self._get_last_balance_via_account_overview(),  # noqa
                 }
                 break
@@ -161,7 +160,6 @@ class TradingOperator:
         cash_movements = self.get_movements_from_account_overview(
             account_overview["cashMovements"]
         )
-
         last_balance = get_last_valuta_balance(cash_movements)
 
         return decimalize(last_balance)

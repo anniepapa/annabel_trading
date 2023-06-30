@@ -1,7 +1,3 @@
-import csv
-from decimal import Decimal
-
-from my_logger import logger
 from degiro_connector.trading.models.trading_pb2 import (  # noqa
     OrdersHistory,
     TransactionsHistory,
@@ -9,14 +5,8 @@ from degiro_connector.trading.models.trading_pb2 import (  # noqa
     CashAccountReport,
 )
 
-
-def sort_dict_string_content(string_csv):
-    content = list(csv.DictReader(string_csv.splitlines(), delimiter=","))
-    content.sort(
-        key=lambda x: (x["Datum"], -Decimal(x[""].replace(",", "."))),
-        reverse=True,
-    )
-    return content
+from my_logger import logger
+from toolkits import sort_dict_string_content
 
 
 class BaseRequestOnDate:
