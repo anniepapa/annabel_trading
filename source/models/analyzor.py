@@ -39,12 +39,12 @@ class TradingAnalyzor:
         trans_fee = kwarg["trans_fee"]
         fx_rate = kwarg["fx_rate"]
 
-        self.cashable = Decimal(self.balance - trans_fee) / Decimal(1.0025)
-        self.stock_price_in_euro = Decimal(self.last_price / fx_rate)
-
-        capacity = decimalize(
-            self.cashable / self.stock_price_in_euro, ".0001"
+        self.cashable = decimalize(
+            Decimal(self.balance - trans_fee) / Decimal(1.0025)
         )
+        self.stock_price_in_euro = decimalize(self.last_price / fx_rate)
+
+        capacity = decimalize(self.cashable / self.stock_price_in_euro)
         self.capacity = math.floor(capacity)
 
     def analyze_price_movements(self):
