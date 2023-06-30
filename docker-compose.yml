@@ -6,16 +6,16 @@ services:
       context: .
       dockerfile: Dockerfile
     image: annabel_trading
-    command: ["VOLVO CAR AB"]
+    command: ["VOLVO CAR AB", "VOLCAR B"]
 
   tesla:
     image: annabel_trading
-    command: ["TESLA"]
+    command: ["TESLA", "TSLA"]
     depends_on:
       - volvo
 
   faraday:
     image: annabel_trading
-    command: ["FARADAY"]
+    command: ["FARADAY", "FFIE"]
     depends_on:
       - volvo

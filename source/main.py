@@ -24,7 +24,7 @@ def update_prod_meta(operator, consumer):
     )
 
 
-def main(stock_name):
+def main(stock_name, code):
     logger.info(f"Start automatic trading for the stock: {stock_name}")
 
     with open("config/config.json") as config_file:
@@ -32,7 +32,7 @@ def main(stock_name):
 
     with DegiroConnection(config_dict) as trading_api:
         trading_operator = TradingOperator(trading_api)
-        trading_operator.initiate_prod_meta_from_str(stock_name)
+        trading_operator.initiate_prod_meta_from_str(stock_name, code)
         prod_consumer = ProductConsumer(config_dict["user_token"])
 
         update_prod_meta(trading_operator, prod_consumer)
