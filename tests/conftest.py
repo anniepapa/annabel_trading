@@ -1,5 +1,6 @@
 import pytest
 from google.protobuf.struct_pb2 import Struct, ListValue
+from decimal import Decimal
 
 from utils import ProductConsumer
 from models import TradingAnalyzor, LivermoreTradingRule
@@ -217,6 +218,51 @@ def fake_analyzor():
 
 
 @pytest.fixture
-def fake_livermore():
-    livermore = LivermoreTradingRule()
-    return livermore
+def fake_prod_meta():
+    return {
+        "name": "Volvo Car AB",
+        "id": "20209472",
+        "vwd_id": "956683606",
+        "stock_currency": "SEK",
+        "close_price": 42.76,
+        "close_price_date": "2023-06-29",
+        "trans_fee": Decimal("4.9001"),
+        "last_balance": Decimal("138.9200"),
+        "fx_rate": Decimal("11.8064"),
+        "code": "volcar_b",
+        "last_price": Decimal("42.7701"),
+        "response_datetime": "2023-06-30T17:20:27",
+        "cashable": Decimal("133.6857"),
+        "last_price_in_euro": Decimal("3.795"),
+    }
+
+
+@pytest.fixture
+def fake_livermore(fake_prod_meta):
+    return LivermoreTradingRule(fake_prod_meta)
+
+
+@pytest.fixture
+def fake_up():
+    # Volcar_b
+    return {
+        "buy": [
+            {"datetime": "2023-06-30T13:12:35", "price_in_euro": "3.4500"},
+            {"datetime": "2023-06-30T13:12:32", "price_in_euro": "2.5000"},
+        ],
+        "sell": [
+            {"datetime": "2023-06-30T13:13:32", "price_in_euro": "4.8500"},
+        ],
+    }
+
+
+@pytest.fixture
+def fake_down():
+    return {
+        "buy": [
+            {"datetime": "2023-06-30T13:12:35", "price_in_euro": "4.2167"},
+            {"datetime": "2023-06-30T13:12:32", "price_in_euro": "4.8500"},
+            {"datetime": "2023-06-30T13:12:31", "price_in_euro": "3.7500"},
+        ],
+        "sell": [],
+    }

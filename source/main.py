@@ -8,7 +8,7 @@ from utils import (
     TradingOperator,
     ProductConsumer,
 )
-from models import TradingAnalyzor
+from models import TradingAnalyzor, LivermoreTradingRule
 
 
 def update_prod_meta(operator, consumer):
@@ -33,19 +33,25 @@ def main(stock_name, code):
     with DegiroConnection(config_dict) as trading_api:
         trading_operator = TradingOperator(trading_api)
         trading_operator.initiate_prod_meta_from_str(stock_name, code)
-        prod_consumer = ProductConsumer(config_dict["user_token"])
 
+        prod_consumer = ProductConsumer(config_dict["user_token"])
         update_prod_meta(trading_operator, prod_consumer)
-        logger.info(trading_operator.prod_meta)
 
         analyzor = TradingAnalyzor()
         analyzor.analyze_capacity(**trading_operator.prod_meta)
         analyzor.act_on_capacity()
-        logger.info(analyzor.cashable_state)
 
-        analyzor.price_down_20_percent = True
-        analyzor.order_created = True
-        analyzor.order_confirmed = True
+        trading_operator.prod_meta.update(
+            {
+                "cashable": analyzor.cashable,
+                "last_price_in_euro": analyzor.stock_price_in_euro,
+            }
+        )
+        logger.info(trading_operator.prod_meta)
+
+    livermore = LivermoreTradingRule(trading_operator.prod_meta)
+    livermore.analyze()
+    # print(livermore.initial_position)
 
 
 if __name__ == "__main__":

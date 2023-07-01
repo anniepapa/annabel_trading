@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime, timedelta
 
 import degiro_connector.core.helpers.pb_handler as payload_handler
@@ -17,8 +18,8 @@ class TradingOperator:
         "trading_api",
         "order_created",
         "order_confirmed",
-        "config",
-        "client_details",
+        # "config",
+        # "client_details",
         "account_info",
         "prod_meta",
     )
@@ -29,8 +30,8 @@ class TradingOperator:
         self.order_created = False
         self.order_confirmed = False
 
-        self.config = self._get_config()
-        self.client_details = self._get_client_details()
+        # self.config = self._get_config()
+        # self.client_details = self._get_client_details()
         self.account_info = self._get_account_info()
 
         self.prod_meta = {}
@@ -63,8 +64,16 @@ class TradingOperator:
                     "last_balance": self._get_last_balance_via_account_overview(),  # noqa
                 }
                 break
+        else:
+            logger.error(f"{prod['symbol']} and {code} has no match")
+            sys.exit()
 
-        self.prod_meta.update({"fx_rate": self._get_fx_rate()})
+        self.prod_meta.update(
+            {
+                "fx_rate": self._get_fx_rate(),
+                "code": code.lower().replace(" ", "_"),
+            }
+        )
 
     def make_an_order(self, product_id, price, size, action_type="B"):
         action = self._decide_action(action_type)
