@@ -43,7 +43,10 @@ class TradingAnalyzor:
             Decimal(self.balance - trans_fee) / Decimal(1.0025)
         )
         self.stock_price_in_euro = decimalize(self.last_price / fx_rate)
-
+        logger.info(
+            f"Calculating capacity: {self.cashable} on 20% position: "
+            f"{self.balance} divided by {self.stock_price_in_euro}"
+        )
         capacity = decimalize(self.cashable / self.stock_price_in_euro)
         self.capacity = math.floor(capacity)
 

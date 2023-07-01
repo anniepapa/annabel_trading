@@ -49,13 +49,9 @@ def main(stock_name, code):
         )
         logger.info(trading_operator.prod_meta)
 
-        analyzor.price_down_20_percent = True
-        analyzor.order_created = True
-        analyzor.order_confirmed = True
-
     livermore = LivermoreTradingRule(trading_operator.prod_meta)
-    livermore.analyze_trend()
-    print(livermore.initial_position)
+    livermore.analyze()
+    # print(livermore.initial_position)
 
 
 if __name__ == "__main__":

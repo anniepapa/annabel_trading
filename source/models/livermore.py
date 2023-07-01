@@ -12,9 +12,10 @@ from decimal import Decimal
 
 from my_logger import logger
 from toolkits import decimalize
+from models import TradingAnalyzor
 
 
-class LivermoreTradingRule:
+class LivermoreTradingRule(TradingAnalyzor):
     """_summary_
     仓位(position): 是指投资人实际投资和实有投资资金的比例
     """
@@ -26,15 +27,17 @@ class LivermoreTradingRule:
         self.price_down_20_percent = True  # TODO, placeholder for testing
 
         self.initial_position = decimalize(
-            Decimal(0.2) * prod_meta["cashable"]
+            Decimal("0.2") * prod_meta["cashable"]
         )
         self.pivot_hist = self._get_pivot_hist(prod_meta["code"])
         self.last_price_in_euro = prod_meta["last_price_in_euro"]
 
-        self.up_ratio = 0
-        self.down_ratio = 0
+        self.ratio_diff = 0
         self.state = None
-        self.new_position = {**prod_meta, **{"balance": self.initial_position}}
+        self.prod_meta = {
+            **prod_meta,
+            **{"last_balance": self.initial_position},
+        }
         self.capacity = 0
 
     def analyze_trend(self):
@@ -43,45 +46,42 @@ class LivermoreTradingRule:
         )
         # self.last_sell_price = Decimal(self.pivot_hist["sell"][0]["price_in_euro"])   # noqa
 
-        ratio = decimalize(
+        self.ratio_diff = decimalize(
             (self.last_price_in_euro - self.last_buy_price)
             / self.last_buy_price
         )
-        if ratio >= Decimal("0.1"):
-            self.up_ratio, self.state = ratio, 1
-            logger.info(
-                f"💹The last price of {self.new_position['name']} "
-                f"has 🚀: {ratio*100}% up. Time to buy 20% more."
-            )
-        elif ratio <= Decimal("-0.1"):
-            self.down_ratio, self.state = ratio, -1
-            logger.info(
-                f"🈹The last price of {self.new_position['name']} "
-                f"has 💥: {ratio*100}% down. Time to sell all."
-            )
-        else:
-            logger.info(
-                f"🧭The last price of {self.new_position['name']} "
-                f"has {ratio*100}% price diff. Hold it for now."
-            )
+        if self.ratio_diff >= Decimal("0.1"):
+            self.state = 1
 
-    def analyze_capacity(self, analyzor):
+        elif self.ratio_diff <= Decimal("-0.1"):
+            self.state = -1
+
+        else:
+            None
+
+    def analyze(self):
+        self.analyze_trend()
+
         if self.state == 1:
-            self.capacity = analyzor.analyze_capacity(**self.new_position)
+            self.analyze_capacity(**self.prod_meta)
+
+            logger.info(
+                f"💹The last price of {self.prod_meta['name']} "
+                f"has 🚀: {self.ratio_diff*100}% up. Time to buy 20% more. "
+                f"Max to add: {self.capacity} base on 20% cashable position."
+            )
 
         elif self.state == -1:
-            logger.info("All stocks will be sold.")
+            logger.info(
+                f"🈹The last price of {self.prod_meta['name']} "
+                f"has 💥: {self.ratio_diff*100}% down. Time to sell all."
+            )
 
         else:
-            logger.info("Not any pivot point yet, will hold for now")
-
-    def analyze_price(self, product, position=None):
-        if self.price_down_20_percent:
-            self.match_sell = True
-        elif self.price_up_20_percent:
-            self.match_buy = True
-        else:
-            logger.info("Pivot point not appear, no action to take")
+            logger.info(
+                f"🧭 Price change: {self.ratio_diff*100}%. "
+                f"Not any pivot point yet, will hold for now"
+            )
 
     def trade(self, trading_api):
         if self.match_buy:

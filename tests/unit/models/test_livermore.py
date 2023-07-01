@@ -33,13 +33,13 @@ class TestLivermoreRule:
     def test_analyze_trend_up(self, fake_livermore, fake_up):
         fake_livermore.pivot_hist = fake_up
         fake_livermore.analyze_trend()
-        assert fake_livermore.up_ratio >= Decimal("0.1")
+        assert fake_livermore.ratio_diff >= Decimal("0.1")
         assert fake_livermore.state == 1
 
     def test_analyze_trend_down(self, fake_livermore, fake_down):
         fake_livermore.pivot_hist = fake_down
         fake_livermore.analyze_trend()
-        assert fake_livermore.down_ratio <= Decimal("-0.1")
+        assert fake_livermore.ratio_diff <= Decimal("-0.1")
         assert fake_livermore.state == -1
 
     # def test_livermorerule_analyze_product_price(
