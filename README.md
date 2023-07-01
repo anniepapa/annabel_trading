@@ -1,6 +1,6 @@
-# annabel_trading
-A WIP trading robot for automation of investment, which is built for Annie &amp; Bella
-It's initially a command line tool that interacts with DEGIRO platform, also does basic trading using severl classical trading theories.
+# WIP: Annabel_trading
+A WIP trading robot for automating investment process.
+It's initially a command line tool that interacts with DEGIRO platform with DEGIRO connector, also does basic trading using several classical trading theories.
 
 # TODO:
 Design document
@@ -35,4 +35,4 @@ Technical:
 
 
 # Acknowledgement
-I would like to pay tribute to Mr. Livermore from this childish app with full respect and expectation. Meanwhile big thanks to Chavithra's great work: https://github.com/Chavithra/degiro-connector. Last but not least, for my beloved daughters: Annie & Bella
+I would like to pay tribute to Mr. Livermore from this childish app with respect. Meanwhile big thanks to Chavithra's great work: https://github.com/Chavithra/degiro-connector. Last but not least, thanks to my beloved daughters: Annie & Bella
