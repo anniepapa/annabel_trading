@@ -12,7 +12,7 @@ class TradingAnalyzor:
         "last_price",
         "capacity",
         "cashable",
-        "stock_price_in_euro",
+        "last_price_in_euro",
         "cashable_state",
     )
 
@@ -21,7 +21,7 @@ class TradingAnalyzor:
         self.balance = 0
         self.capacity = 0
         self.cashable = 0
-        self.stock_price_in_euro = 0
+        self.last_price_in_euro = 0
         self.cashable_state = False
 
     def analyze_capacity(self, **kwarg):
@@ -42,12 +42,12 @@ class TradingAnalyzor:
         self.cashable = decimalize(
             Decimal(self.balance - trans_fee) / Decimal(1.0025)
         )
-        self.stock_price_in_euro = decimalize(self.last_price / fx_rate)
+        self.last_price_in_euro = decimalize(self.last_price / fx_rate)
         logger.info(
             f"Calculating capacity: {self.cashable} on 20% position: "
-            f"{self.balance} divided by {self.stock_price_in_euro}"
+            f"{self.balance} divided by {self.last_price_in_euro}"
         )
-        capacity = decimalize(self.cashable / self.stock_price_in_euro)
+        capacity = decimalize(self.cashable / self.last_price_in_euro)
         self.capacity = math.floor(capacity)
 
     def analyze_price_movements(self):
@@ -56,18 +56,18 @@ class TradingAnalyzor:
     def act_on_capacity(self):
         if self.capacity < 1:
             logger.critical(
-                f"Cashable: ⛔ \n"
+                f"⛔ Uncashable: \n"
                 f"Insufficient balance to buy 1 {self.stock_name}. "
-                f"Last price of 1 stock: {self.stock_price_in_euro} "
+                f"Last price of 1 stock: {self.last_price_in_euro} "
                 f"({self.last_price}). "
                 f"Balance: {self.balance}. Cashable: {self.cashable}"
             )
 
         else:
             logger.info(
-                f"Cashable: ✅ \n"
+                f"✅ Cashable: \n"
                 f"Capacity: can order max {self.capacity} {self.stock_name}. "
-                f"Last price of 1 stock: {self.stock_price_in_euro} "
+                f"Last price of 1 stock: {self.last_price_in_euro} "
                 f"({self.last_price}). "
                 f"Balance: {self.balance}. Cashable: {self.cashable}"
             )

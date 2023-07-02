@@ -28,19 +28,21 @@ It's worth noting that while the Livermore Rule can be a profitable strategy dur
 """
 from decimal import Decimal
 
+from models import LivermoreTradingRule
+
 
 class TestLivermoreRule:
-    def test_analyze_trend_up(self, fake_livermore, fake_up):
-        fake_livermore.pivot_hist = fake_up
-        fake_livermore.analyze_trend()
-        assert fake_livermore.ratio_diff >= Decimal("0.1")
-        assert fake_livermore.state == 1
+    def test_analyze_trend_up(self, fake_prod_meta):
+        fake_livermore_up = LivermoreTradingRule(fake_prod_meta)
+        fake_livermore_up.analyze()
+        assert fake_livermore_up.ratio_diff >= Decimal("0.1")
+        assert fake_livermore_up.state == 1
 
-    def test_analyze_trend_down(self, fake_livermore, fake_down):
-        fake_livermore.pivot_hist = fake_down
-        fake_livermore.analyze_trend()
-        assert fake_livermore.ratio_diff <= Decimal("-0.1")
-        assert fake_livermore.state == -1
+    def test_analyze_trend_down(self, fake_prod_meta_down):
+        fake_livermore_down = LivermoreTradingRule(fake_prod_meta_down)
+        fake_livermore_down.analyze()
+        assert fake_livermore_down.ratio_diff <= Decimal("-0.1")
+        assert fake_livermore_down.state == -1
 
     # def test_livermorerule_analyze_product_price(
     #     self, fake_livermore, fake_product

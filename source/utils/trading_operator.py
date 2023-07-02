@@ -16,16 +16,21 @@ from toolkits import decimalize, get_last_valuta_balance
 class TradingOperator:
     __slots__ = (
         "trading_api",
+        "keyword",
+        "code",
         "order_created",
         "order_confirmed",
         # "config",
         # "client_details",
         "account_info",
+        "product_id",
         "prod_meta",
     )
 
-    def __init__(self, trading_api=None):
+    def __init__(self, keyword, code, trading_api=None):
         self.trading_api = trading_api
+        self.keyword = keyword
+        self.code = code.lower().replace(" ", "_")
 
         self.order_created = False
         self.order_confirmed = False
@@ -33,15 +38,23 @@ class TradingOperator:
         # self.config = self._get_config()
         # self.client_details = self._get_client_details()
         self.account_info = self._get_account_info()
+        self.product_id = None
+        self.prod_meta = self.initiate_prod_meta_from_str()
 
-        self.prod_meta = {}
+        self.prod_meta.update(
+            {
+                "fx_rate": self._get_fx_rate(self.prod_meta["stock_currency"]),
+                "code": self.code.replace(" ", "_"),
+            }
+        )
+        self._get_last_transaction_price()
 
-    def initiate_prod_meta_from_str(self, keyword, code):
+    def initiate_prod_meta_from_str(self):
         """
         example: 'vOvlVO cAr', 'volcar b'
         """
         request = ProductSearch.RequestLookup(
-            search_text=keyword,
+            search_text=self.keyword,
             limit=10,
             offset=0,
             product_type_id=1,
@@ -51,9 +64,11 @@ class TradingOperator:
         prods = payload_handler.message_to_dict(message=products)["products"]
 
         for prod in prods:
-            if prod["symbol"].lower() == code.lower():
-                logger.info(f"Product matches {keyword} and {code}: {prod}")
-                self.prod_meta = {
+            if prod["symbol"].lower().replace(" ", "_") == self.code:
+                logger.info(
+                    f"Product matches {self.keyword} and {self.code}: {prod}"
+                )
+                prod_meta = {
                     "name": prod["name"],
                     "id": prod["id"],
                     "vwd_id": prod["vwdId"],
@@ -65,15 +80,10 @@ class TradingOperator:
                 }
                 break
         else:
-            logger.error(f"{prod['symbol']} and {code} has no match")
+            logger.error(f"{prod['symbol']} and {self.code} has no match")
             sys.exit()
 
-        self.prod_meta.update(
-            {
-                "fx_rate": self._get_fx_rate(),
-                "code": code.lower().replace(" ", "_"),
-            }
-        )
+        return prod_meta
 
     def make_an_order(self, product_id, price, size, action_type="B"):
         action = self._decide_action(action_type)
@@ -146,8 +156,8 @@ class TradingOperator:
 
         return products["data"].values()
 
-    def _get_fx_rate(self):
-        fx_code = "EUR" + self.prod_meta["stock_currency"]
+    def _get_fx_rate(self, stock_currency):
+        fx_code = "EUR" + stock_currency
         fx_rates = self.account_info["currencyPairs"]
         return decimalize(fx_rates[fx_code]["price"])
 
@@ -164,17 +174,12 @@ class TradingOperator:
         return account_info_table["data"]
 
     def _get_last_balance_via_account_overview(self):
-        account_overview = self.__get_last_balance_record("account")
-
-        cash_movements = self.get_movements_from_account_overview(
-            account_overview["cashMovements"]
-        )
+        cash_movements = self.__get_last_records("account")
         last_balance = get_last_valuta_balance(cash_movements)
-
         return decimalize(last_balance)
 
     def _get_last_balance_via_cash_report(self):
-        content_exists = self.__get_last_balance_record("cash")
+        content_exists = self.__get_last_records("cash")
 
         content_of_last_balance = get_last_valuta_balance(
             content_exists, key_name="Omschrijving"
@@ -182,20 +187,38 @@ class TradingOperator:
 
         return decimalize(content_of_last_balance.replace(",", "."))
 
-    def __get_last_balance_record(self, type_name):
+    def _get_last_transaction_price(self):
+        self.product_id = self.prod_meta["id"]
+        last_transaction_details = self.__get_last_records("transaction")[0]
+        last_transaction = {
+            last_transaction_details["buysell"].lower(): {
+                "transaction_datetime": last_transaction_details["date"],
+                "price_foreign": decimalize(last_transaction_details["price"]),
+                "last_buy_fx_rate": decimalize(
+                    last_transaction_details["nettFxRate"]
+                ),
+                "quantity": decimalize(last_transaction_details["quantity"]),
+                "total_plus_all_fees_in_euro": decimalize(
+                    last_transaction_details["totalPlusAllFeesInBaseCurrency"]
+                ),
+            }
+        }
+
+        self.prod_meta.update({"last_transaction_price": last_transaction})
+
+    def __get_last_records(self, type_name):
         today = datetime.now()
         to_year, to_mon, to_day = today.year, today.month, today.day
-        cash_movements = []
-        d = 0
+        history_records, d = [], 0
 
-        while not cash_movements:
-            prev_day = today - timedelta(days=d)
+        while d <= 31 and not history_records:
+            prev_week = today - timedelta(days=d)
             from_year, from_mon, from_day = (
-                prev_day.year,
-                prev_day.month,
-                prev_day.day,
+                prev_week.year,
+                prev_week.month,
+                prev_week.day,
             )
-            cash_movements = self.get_history_response(
+            history_records = self.get_history_response(
                 type_name,
                 from_year=from_year,
                 to_year=to_year,
@@ -205,30 +228,28 @@ class TradingOperator:
                 to_day=to_day,
             ).history
 
-            d += 1
+            if self.product_id:
+                for record in history_records:
+                    if (
+                        int(record.get("productId")) == int(self.product_id)
+                        and record["buysell"] == "B"
+                    ):  # noqa
+                        history_records = [record]
+                        logger.info(
+                            f"📆 Last history records of {type_name} exist on "
+                            f"{record['date']}"
+                        )
+                        break
 
-        logger.info(
-            f"Last cash movements(balance) was on {today-timedelta(days=d-1)}"
-        )
-        return cash_movements
+                else:
+                    history_records = []
+                    logger.warning(
+                        f"❓❓❓🧐 no any last transaction price can be found "
+                        f"for {self.product_id} from the past {d} days."
+                    )
 
-    @staticmethod
-    def get_movements_from_account_overview(raw_cash_movements):
-        account_overview = []
-
-        for item in raw_cash_movements:
-            account_overview.append(
-                {
-                    "value_date": item["valueDate"],
-                    "balance": item["balance"]["total"],
-                    "type": item["type"],
-                    "description": item["description"],
-                }
-            )
-
-        return sorted(
-            account_overview, key=lambda x: x["value_date"], reverse=True
-        )
+            d += 7
+        return history_records
 
     @staticmethod
     def _decide_action(action_type):

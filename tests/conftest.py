@@ -3,7 +3,7 @@ from google.protobuf.struct_pb2 import Struct, ListValue
 from decimal import Decimal
 
 from utils import ProductConsumer
-from models import TradingAnalyzor, LivermoreTradingRule
+from models import TradingAnalyzor
 
 
 @pytest.fixture
@@ -230,6 +230,15 @@ def fake_prod_meta():
         "last_balance": Decimal("138.9200"),
         "fx_rate": Decimal("11.8064"),
         "code": "volcar_b",
+        "last_transaction_price": {
+            "b": {
+                "transaction_datetime": "2023-06-15T16:11:58+02:00",
+                "price_foreign": Decimal("-40.6320"),
+                "last_buy_fx_rate": Decimal("11.5632"),
+                "quantity": Decimal("1.0000"),
+                "total_plus_all_fees_in_euro": Decimal("-8.6776"),
+            }
+        },
         "last_price": Decimal("42.7701"),
         "response_datetime": "2023-06-30T17:20:27",
         "cashable": Decimal("133.6857"),
@@ -238,31 +247,46 @@ def fake_prod_meta():
 
 
 @pytest.fixture
-def fake_livermore(fake_prod_meta):
-    return LivermoreTradingRule(fake_prod_meta)
+def fake_prod_meta_down(fake_prod_meta):
+    fake_prod_meta.update(
+        {
+            "last_transaction_price": {
+                "b": {
+                    "transaction_datetime": "2023-06-15T16:11:58+02:00",
+                    "price_foreign": Decimal("49.9840"),
+                    "last_buy_fx_rate": Decimal("11.5632"),
+                    "quantity": Decimal("1.0000"),
+                    "total_plus_all_fees_in_euro": Decimal("-8.6776"),
+                }
+            }
+        }
+    )
+    return fake_prod_meta
 
 
 @pytest.fixture
-def fake_up():
-    # Volcar_b
+def sample_transaction_history():
     return {
-        "buy": [
-            {"datetime": "2023-06-30T13:12:35", "price_in_euro": "3.4500"},
-            {"datetime": "2023-06-30T13:12:32", "price_in_euro": "2.5000"},
-        ],
-        "sell": [
-            {"datetime": "2023-06-30T13:13:32", "price_in_euro": "4.8500"},
-        ],
-    }
-
-
-@pytest.fixture
-def fake_down():
-    return {
-        "buy": [
-            {"datetime": "2023-06-30T13:12:35", "price_in_euro": "4.2167"},
-            {"datetime": "2023-06-30T13:12:32", "price_in_euro": "4.8500"},
-            {"datetime": "2023-06-30T13:12:31", "price_in_euro": "3.7500"},
-        ],
-        "sell": [],
+        "transactionTypeId": 0.0,
+        "transfered": False,
+        "quantity": 1.0,
+        "tradingVenue": "MESI",
+        "id": 393047611.0,
+        "grossFxRate": 11.592,
+        "totalPlusFeeInBaseCurrency": -8.668103248,
+        "price": 43.68,
+        "orderTypeId": 0.0,
+        "executingEntityId": "54930056FHWP7GIWYY08",
+        "fxRate": 11.592,
+        "autoFxFeeInBaseCurrency": -0.00942025812,
+        "date": "2023-06-15T16:11:58+02:00",
+        "total": -43.68,
+        "nettFxRate": 11.5631,
+        "totalFeesInBaseCurrency": -4.90942025812,
+        "productId": 20209472.0,
+        "feeInBaseCurrency": -4.9,
+        "buysell": "B",
+        "totalInBaseCurrency": -3.768103248,
+        "counterParty": "MK",
+        "totalPlusAllFeesInBaseCurrency": -8.67752350612,
     }
