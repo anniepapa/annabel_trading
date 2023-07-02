@@ -87,8 +87,8 @@ class RequestAccountHistoryOverview(BaseRequestOnDate):
         ).values
 
         if not history:
-            logger.error(
-                f"{self._HIST_TYPE}: {self.request} returns empty history"
+            logger.warning(
+                f"⚠ {self._HIST_TYPE}: {self.request} returns empty history"
             )
             self.history = []
 

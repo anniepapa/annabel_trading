@@ -37,23 +37,20 @@ def main(stock_name, code):
         prod_consumer = ProductConsumer(config_dict["user_token"])
         update_prod_meta(trading_operator, prod_consumer)
 
+        pre_analysis = TradingAnalyzor()
+        pre_analysis.analyze_capacity(**trading_operator.prod_meta)
+        pre_analysis.act_on_capacity()
+
+        trading_operator.prod_meta.update(
+            {
+                "cashable": pre_analysis.cashable,
+                "last_price_in_euro": pre_analysis.last_price_in_euro,
+            }
+        )
         logger.info(trading_operator.prod_meta)
 
-    #     pre_analysis = TradingAnalyzor()
-    #     pre_analysis.analyze_capacity(**trading_operator.prod_meta)
-    #     pre_analysis.act_on_capacity()
-
-    #     trading_operator.prod_meta.update(
-    #         {
-    #             "cashable": pre_analysis.cashable,
-    #             "last_price_in_euro": pre_analysis.last_price_in_euro,
-    #         }
-    #     )
-    #     logger.info(trading_operator.prod_meta)
-
-    # livermore = LivermoreTradingRule(trading_operator.prod_meta)
-    # livermore.analyze()
-    # print(livermore.initial_position)
+    livermore = LivermoreTradingRule(trading_operator.prod_meta)
+    livermore.analyze()
 
 
 if __name__ == "__main__":

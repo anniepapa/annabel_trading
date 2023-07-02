@@ -10,7 +10,7 @@ from degiro_connector.trading.models.trading_pb2 import (  # noqa
 
 from utils import BaseRequestOnDate
 from my_logger import logger
-from toolkits import decimalize, get_last_valuta_balance, pretty_table
+from toolkits import decimalize, get_last_valuta_balance
 
 
 class TradingOperator:
@@ -23,7 +23,7 @@ class TradingOperator:
         # "config",
         # "client_details",
         "account_info",
-        "last_transaction_hist",
+        "product_id",
         "prod_meta",
     )
 
@@ -38,7 +38,16 @@ class TradingOperator:
         # self.config = self._get_config()
         # self.client_details = self._get_client_details()
         self.account_info = self._get_account_info()
+        self.product_id = None
         self.prod_meta = self.initiate_prod_meta_from_str()
+
+        self.prod_meta.update(
+            {
+                "fx_rate": self._get_fx_rate(self.prod_meta["stock_currency"]),
+                "code": self.code.replace(" ", "_"),
+            }
+        )
+        self._get_last_transaction_price()
 
     def initiate_prod_meta_from_str(self):
         """
@@ -73,16 +82,6 @@ class TradingOperator:
         else:
             logger.error(f"{prod['symbol']} and {self.code} has no match")
             sys.exit()
-
-        prod_meta.update(
-            {
-                "fx_rate": self._get_fx_rate(prod_meta["stock_currency"]),
-                "code": self.code.replace(" ", "_"),
-                "last_transaction_price": self.__get_last_records(
-                    "transaction", prod_meta["id"]
-                ),
-            }
-        )
 
         return prod_meta
 
@@ -188,17 +187,36 @@ class TradingOperator:
 
         return decimalize(content_of_last_balance.replace(",", "."))
 
-    def __get_last_records(self, type_name, product_id=None):
+    def _get_last_transaction_price(self):
+        self.product_id = self.prod_meta["id"]
+        last_transaction_details = self.__get_last_records("transaction")[0]
+        last_transaction = {
+            last_transaction_details["buysell"].lower(): {
+                "transaction_datetime": last_transaction_details["date"],
+                "price_foreign": decimalize(last_transaction_details["price"]),
+                "last_buy_fx_rate": decimalize(
+                    last_transaction_details["nettFxRate"]
+                ),
+                "quantity": decimalize(last_transaction_details["quantity"]),
+                "total_plus_all_fees_in_euro": decimalize(
+                    last_transaction_details["totalPlusAllFeesInBaseCurrency"]
+                ),
+            }
+        }
+
+        self.prod_meta.update({"last_transaction_price": last_transaction})
+
+    def __get_last_records(self, type_name):
         today = datetime.now()
         to_year, to_mon, to_day = today.year, today.month, today.day
         history_records, d = [], 0
 
         while d <= 31 and not history_records:
-            prev_day = today - timedelta(days=d)
+            prev_week = today - timedelta(days=d)
             from_year, from_mon, from_day = (
-                prev_day.year,
-                prev_day.month,
-                prev_day.day,
+                prev_week.year,
+                prev_week.month,
+                prev_week.day,
             )
             history_records = self.get_history_response(
                 type_name,
@@ -210,44 +228,28 @@ class TradingOperator:
                 to_day=to_day,
             ).history
 
-            if product_id:
+            if self.product_id:
                 for record in history_records:
-                    if int(record.get("productId")) == int(product_id):
+                    if (
+                        int(record.get("productId")) == int(self.product_id)
+                        and record["buysell"] == "B"
+                    ):  # noqa
                         history_records = [record]
+                        logger.info(
+                            f"📆 Last history records of {type_name} exist on "
+                            f"{record['date']}"
+                        )
                         break
+
                 else:
                     history_records = []
-                    logger.warn(
+                    logger.warning(
                         f"❓❓❓🧐 no any last transaction price can be found "
-                        f"for {product_id} from the past {d} days."
+                        f"for {self.product_id} from the past {d} days."
                     )
 
-            d += 1
-
-        logger.info(
-            f"Last history records exist on {today-timedelta(days=d-1)}"
-        )
+            d += 7
         return history_records
-
-        # return  {
-        #             "buy": {
-        #                 "datetime": ,
-        #                 "price_in_euro":
-        #             },
-        #             "sell": {
-        #                 "datetime": ,
-        #                 "price_in_euro":
-        #             }
-        #         }
-
-        # account_overview = self.__get_last_balance_record("account")
-
-        # cash_movements = self.get_movements_from_account_overview(
-        #     account_overview["cashMovements"]
-        # )
-        # last_balance = get_last_valuta_balance(cash_movements)
-
-        # return decimalize(last_balance)
 
     @staticmethod
     def _decide_action(action_type):

@@ -56,7 +56,7 @@ class TradingAnalyzor:
     def act_on_capacity(self):
         if self.capacity < 1:
             logger.critical(
-                f"Cashable: ⛔ \n"
+                f"⛔ Uncashable: \n"
                 f"Insufficient balance to buy 1 {self.stock_name}. "
                 f"Last price of 1 stock: {self.last_price_in_euro} "
                 f"({self.last_price}). "
@@ -65,7 +65,7 @@ class TradingAnalyzor:
 
         else:
             logger.info(
-                f"Cashable: ✅ \n"
+                f"✅ Cashable: \n"
                 f"Capacity: can order max {self.capacity} {self.stock_name}. "
                 f"Last price of 1 stock: {self.last_price_in_euro} "
                 f"({self.last_price}). "

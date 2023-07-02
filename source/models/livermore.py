@@ -6,8 +6,6 @@ livermore module is deployed
 
 Additionally, for my beloved daughters: Annie & Bella
 """
-import json
-from pathlib import Path
 from decimal import Decimal
 
 from my_logger import logger
@@ -21,20 +19,9 @@ class LivermoreTradingRule(TradingAnalyzor):
     """
 
     def __init__(self, prod_meta) -> None:
-        self.get_account_latest_cash_total = 0
-        self.match_buy = False
-        self.match_sell = False
-        self.price_down_20_percent = True  # TODO, placeholder for testing
-
         self.initial_position = decimalize(
             Decimal("0.2") * prod_meta["cashable"]
         )
-        self.last_trans_price = self._get_pivot_hist(
-            prod_meta["code"]
-        )  # the last transaction price of bought and sold, noqa
-        self.last_price_in_euro = prod_meta[
-            "last_price_in_euro"
-        ]  # the last market price of the stock, noqa
 
         self.ratio_diff = 0
         self.state = None
@@ -42,18 +29,31 @@ class LivermoreTradingRule(TradingAnalyzor):
             **prod_meta,
             **{"last_balance": self.initial_position},
         }
+
         self.capacity = 0
 
     def analyze_trend(self):
-        self.last_buy_price = Decimal(
-            self.pivot_hist["buy"][0]["price_in_euro"]
+        last_buy_price = abs(
+            self.prod_meta["last_transaction_price"]["b"]["price_foreign"]
         )
-        # self.last_sell_price = Decimal(self.pivot_hist["sell"][0]["price_in_euro"])   # noqa
+        last_buy_price_in_last_fx_rate = decimalize(
+            last_buy_price / self.prod_meta["fx_rate"]
+        )
+        last_buy_price_in_old_fx_rate = decimalize(
+            last_buy_price
+            / self.prod_meta["last_transaction_price"]["b"][
+                "last_buy_fx_rate"
+            ]  # noqa
+        )
+
+        # self.last_sell_price = Decimal(self.pivot_hist["sell"][0]["price_foreign"])   # noqa
+        last_price_in_euro = abs(self.prod_meta["last_price_in_euro"])
 
         self.ratio_diff = decimalize(
-            (self.last_price_in_euro - self.last_buy_price)
-            / self.last_buy_price
+            (last_price_in_euro - last_buy_price_in_last_fx_rate)
+            / last_buy_price_in_old_fx_rate
         )
+
         if self.ratio_diff >= Decimal("0.1"):
             self.state = 1
 
@@ -70,43 +70,26 @@ class LivermoreTradingRule(TradingAnalyzor):
             self.analyze_capacity(**self.prod_meta)
 
             logger.info(
-                f"💹The last price of {self.prod_meta['name']} "
+                f"💹 Livermore: The last price of {self.prod_meta['name']} "
                 f"has 🚀: {self.ratio_diff*100}% up. Time to buy 20% more. "
                 f"Max to add: {self.capacity} base on 20% cashable position."
             )
 
         elif self.state == -1:
             logger.info(
-                f"🈹The last price of {self.prod_meta['name']} "
+                f"🈹 Livermore: The last price of {self.prod_meta['name']} "
                 f"has 💥: {self.ratio_diff*100}% down. Time to sell all."
             )
 
         else:
             logger.info(
-                f"🧭 Price change: {self.ratio_diff*100}%. "
+                f"🧭 Livermore: Price change: {self.ratio_diff*100}%. "
                 f"Not any pivot point yet, will hold for now"
             )
 
-    def trade(self, trading_api):
-        if self.match_buy:
-            trading_api.make_an_order(action_type="b")
+    # def trade(self, trading_api):
+    #     if self.match_buy:
+    #         trading_api.make_an_order(action_type="b")
 
-        else:
-            trading_api.make_an_order(action_type="s")
-
-    @staticmethod
-    def _get_pivot_hist(code):
-        with open(Path(__file__).parents[1] / "pivot_hist.json") as pivot_hist:
-            hist = json.load(pivot_hist)[code]
-
-            if hist.get("buy"):
-                hist["buy"] = sorted(
-                    hist["buy"], key=lambda x: x["datetime"], reverse=True
-                )
-
-            if hist.get("sell"):
-                hist["sell"] = sorted(
-                    hist["sell"], key=lambda x: x["datetime"], reverse=True
-                )
-
-            return hist
+    #     else:
+    #         trading_api.make_an_order(action_type="s")
