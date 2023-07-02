@@ -31,26 +31,28 @@ def main(stock_name, code):
         config_dict = json.load(config_file)
 
     with DegiroConnection(config_dict) as trading_api:
-        trading_operator = TradingOperator(trading_api)
-        trading_operator.initiate_prod_meta_from_str(stock_name, code)
+        trading_operator = TradingOperator(stock_name, code, trading_api)
+        logger.info(trading_operator.prod_meta)
 
         prod_consumer = ProductConsumer(config_dict["user_token"])
         update_prod_meta(trading_operator, prod_consumer)
 
-        analyzor = TradingAnalyzor()
-        analyzor.analyze_capacity(**trading_operator.prod_meta)
-        analyzor.act_on_capacity()
-
-        trading_operator.prod_meta.update(
-            {
-                "cashable": analyzor.cashable,
-                "last_price_in_euro": analyzor.stock_price_in_euro,
-            }
-        )
         logger.info(trading_operator.prod_meta)
 
-    livermore = LivermoreTradingRule(trading_operator.prod_meta)
-    livermore.analyze()
+    #     pre_analysis = TradingAnalyzor()
+    #     pre_analysis.analyze_capacity(**trading_operator.prod_meta)
+    #     pre_analysis.act_on_capacity()
+
+    #     trading_operator.prod_meta.update(
+    #         {
+    #             "cashable": pre_analysis.cashable,
+    #             "last_price_in_euro": pre_analysis.last_price_in_euro,
+    #         }
+    #     )
+    #     logger.info(trading_operator.prod_meta)
+
+    # livermore = LivermoreTradingRule(trading_operator.prod_meta)
+    # livermore.analyze()
     # print(livermore.initial_position)
 
 

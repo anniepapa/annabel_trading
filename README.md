@@ -1,6 +1,7 @@
 # WIP: Annabel_trading
 A WIP trading robot for automating investment process.
-It's initially a command line tool that interacts with DEGIRO platform with DEGIRO connector, also does basic trading using several classical trading theories.
+It's initially a command line tool that interacts with DEGIRO platform using DEGIRO connector.
+Livermore pyramiding is, and will be the the main trading strategy behind this project.
 
 # TODO:
 Design document

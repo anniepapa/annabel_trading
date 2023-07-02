@@ -29,8 +29,12 @@ class LivermoreTradingRule(TradingAnalyzor):
         self.initial_position = decimalize(
             Decimal("0.2") * prod_meta["cashable"]
         )
-        self.pivot_hist = self._get_pivot_hist(prod_meta["code"])
-        self.last_price_in_euro = prod_meta["last_price_in_euro"]
+        self.last_trans_price = self._get_pivot_hist(
+            prod_meta["code"]
+        )  # the last transaction price of bought and sold, noqa
+        self.last_price_in_euro = prod_meta[
+            "last_price_in_euro"
+        ]  # the last market price of the stock, noqa
 
         self.ratio_diff = 0
         self.state = None

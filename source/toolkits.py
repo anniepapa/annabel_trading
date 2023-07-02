@@ -32,6 +32,7 @@ def get_last_valuta_balance(content, key_name="description"):
         "iDEAL Deposit",
         "Valuta Debitering",
         "Reservation iDEAL / Sofort Deposit",
+        "Flatex Interest Income",
     )
     content = sorted(
         content, key=itemgetter("value_date", "balance"), reverse=True

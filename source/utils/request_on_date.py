@@ -73,8 +73,7 @@ class RequestTransactionsHistory(BaseRequestOnDate):
             request=self.request,
             raw=False,
         )
-
-        self.history = [dict(order) for order in history.values]
+        self.history = [dict(trans) for trans in history.values]
 
 
 class RequestAccountHistoryOverview(BaseRequestOnDate):
@@ -85,15 +84,36 @@ class RequestAccountHistoryOverview(BaseRequestOnDate):
         history = api.get_account_overview(
             request=self.request,
             raw=False,
-        )
+        ).values
 
-        self.history = history.values
-
-        if not self.history:
+        if not history:
             logger.error(
                 f"{self._HIST_TYPE}: {self.request} returns empty history"
             )
             self.history = []
+
+        else:
+            self.history = self._get_movements_from_account_overview(
+                history["cashMovements"]
+            )
+
+    @staticmethod
+    def _get_movements_from_account_overview(raw_cash_movements):
+        cash_movements = []
+
+        for item in raw_cash_movements:
+            cash_movements.append(
+                {
+                    "value_date": item["valueDate"],
+                    "balance": item["balance"]["total"],
+                    "type": item["type"],
+                    "description": item["description"],
+                }
+            )
+
+        return sorted(
+            cash_movements, key=lambda x: x["value_date"], reverse=True
+        )
 
 
 class RequestCashAccountReport(BaseRequestOnDate):
