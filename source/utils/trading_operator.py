@@ -178,7 +178,7 @@ class TradingOperator:
         last_balance = get_last_valuta_balance(cash_movements)
         return decimalize(last_balance)
 
-    def _get_last_balance_via_cash_report(self):
+    def _get_last_balance_via_cash_report(self):  # to be tested more
         content_exists = self.__get_last_records("cash")
 
         content_of_last_balance = get_last_valuta_balance(

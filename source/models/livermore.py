@@ -84,7 +84,7 @@ class LivermoreTradingRule(TradingAnalyzor):
         else:
             logger.info(
                 f"🧭 Livermore: Price change: {self.ratio_diff*100}%. "
-                f"Not any pivot point yet, will hold for now"
+                f"Not any pivot point yet, would hold it for now"
             )
 
     # def trade(self, trading_api):

@@ -3,7 +3,6 @@ import csv
 import pytz
 from datetime import datetime
 from decimal import Decimal, ROUND_UP
-from operator import itemgetter
 
 
 def pretty_table(target_table):
@@ -28,22 +27,18 @@ def decimalize(value, prec=".0001"):
 
 
 def get_last_valuta_balance(content, key_name="description"):
-    identifier = (
-        "iDEAL Deposit",
-        "Valuta Debitering",
-        "Reservation iDEAL / Sofort Deposit",
-        "Flatex Interest Income",
-    )
-    content = sorted(
-        content, key=itemgetter("value_date", "balance"), reverse=True
+    identifiers = tuple(
+        identifier.lower() for identifier in ("Valuta Crediting",)
     )
 
     for item in content:
-        if item[key_name] in identifier:
-            return item.get("balance") or item.get("")
+        if item[key_name].lower().startswith(identifiers):
+            continue
+
+        return item.get("balance") or item.get("")
 
 
-def sort_dict_string_content(string_csv):
+def sort_dict_string_content(string_csv):  # To be tested more
     content = list(csv.DictReader(string_csv.splitlines(), delimiter=","))
     content.sort(
         key=lambda x: (x["Datum"], -Decimal(x[""].replace(",", "."))),
