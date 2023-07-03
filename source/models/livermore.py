@@ -57,7 +57,7 @@ class LivermoreTradingRule(TradingAnalyzor):
             f"{last_buy_in_base_currency}"
         )
 
-        if self.ratio_diff >= Decimal("0.1"):
+        if self.ratio_diff >= Decimal("0.08"):
             self.state = 1
 
         elif self.ratio_diff <= Decimal("-0.1"):
@@ -90,9 +90,16 @@ class LivermoreTradingRule(TradingAnalyzor):
                 f"Not any pivot point yet, would hold it for now"
             )
 
-    # def trade(self, trading_api):
-    #     if self.match_buy:
-    #         trading_api.make_an_order(action_type="b")
+    def act_on_capacity(self, trading_operator):
+        if self.state == 1 and self.capacity > 0:
+            trading_operator.order(
+                self.prod_meta["last_price_in_euro"],
+                self.capacity,
+                action_type="B",
+            )
 
-    #     else:
-    #         trading_api.make_an_order(action_type="s")
+        elif self.state == -1:
+            trading_operator.order("S")
+
+        else:
+            logger.info("No action, would hold and wait.")

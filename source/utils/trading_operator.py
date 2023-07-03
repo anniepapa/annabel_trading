@@ -86,14 +86,14 @@ class TradingOperator:
 
         return prod_meta
 
-    def make_an_order(self, product_id, price, size, action_type="B"):
+    def order(self, price, size, action_type="B"):
         action = self._decide_action(action_type)
 
         order = Order(
             action=action,
-            order_type=Order.OrderType.LIMIT,
+            order_type=Order.OrderType.STOP_LOSS,
             price=price,
-            product_id=product_id,
+            product_id=self.prod_meta["id"],
             size=size,
             time_type=Order.TimeType.GOOD_TILL_DAY,
         )

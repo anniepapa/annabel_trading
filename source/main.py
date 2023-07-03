@@ -32,8 +32,6 @@ def main(stock_name, code):
 
     with DegiroConnection(config_dict) as trading_api:
         trading_operator = TradingOperator(stock_name, code, trading_api)
-        logger.info(trading_operator.prod_meta)
-
         prod_consumer = ProductConsumer(config_dict["user_token"])
         update_prod_meta(trading_operator, prod_consumer)
 
@@ -49,8 +47,9 @@ def main(stock_name, code):
         )
         logger.info(trading_operator.prod_meta)
 
-    livermore = LivermoreTradingRule(trading_operator.prod_meta)
-    livermore.analyze()
+        livermore = LivermoreTradingRule(trading_operator.prod_meta)
+        livermore.analyze()
+        # livermore.act_on_capacity(trading_operator)
 
 
 if __name__ == "__main__":

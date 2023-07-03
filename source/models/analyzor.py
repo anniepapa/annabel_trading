@@ -51,9 +51,6 @@ class TradingAnalyzor:
         capacity = decimalize(self.cashable / self.last_price_in_euro)
         self.capacity = math.floor(capacity)
 
-    def analyze_price_movements(self):
-        pass
-
     def act_on_capacity(self):
         if self.capacity < 1:
             logger.critical(
