@@ -36,25 +36,28 @@ class LivermoreTradingRule(TradingAnalyzor):
         last_buy_price = abs(
             self.prod_meta["last_transaction_price"]["b"]["price_foreign"]
         )
+        last_buy_in_base_currency = abs(
+            self.prod_meta["last_transaction_price"]["b"][
+                "price_in_base_currency"
+            ]
+        )
         last_buy_price_in_last_fx_rate = decimalize(
             last_buy_price / self.prod_meta["fx_rate"]
-        )
-        last_buy_price_in_old_fx_rate = decimalize(
-            last_buy_price
-            / self.prod_meta["last_transaction_price"]["b"][
-                "last_buy_fx_rate"
-            ]  # noqa
         )
 
         # self.last_sell_price = Decimal(self.pivot_hist["sell"][0]["price_foreign"])   # noqa
         last_price_in_euro = abs(self.prod_meta["last_price_in_euro"])
 
-        self.ratio_diff = decimalize(
-            (last_price_in_euro - last_buy_price_in_last_fx_rate)
-            / last_buy_price_in_old_fx_rate
+        diff = last_price_in_euro - last_buy_price_in_last_fx_rate
+        self.ratio_diff = decimalize(diff / last_buy_in_base_currency)
+
+        logger.debug(
+            f"{self.ratio_diff} on diff: {diff}, from {last_price_in_euro} - "
+            f"{last_buy_price_in_last_fx_rate}  / "
+            f"{last_buy_in_base_currency}"
         )
 
-        if self.ratio_diff >= Decimal("0.1"):
+        if self.ratio_diff >= Decimal("0.08"):
             self.state = 1
 
         elif self.ratio_diff <= Decimal("-0.1"):
@@ -84,12 +87,20 @@ class LivermoreTradingRule(TradingAnalyzor):
         else:
             logger.info(
                 f"🧭 Livermore: Price change: {self.ratio_diff*100}%. "
-                f"Not any pivot point yet, will hold for now"
+                f"Not any pivot point yet, would hold it for now"
             )
 
-    # def trade(self, trading_api):
-    #     if self.match_buy:
-    #         trading_api.make_an_order(action_type="b")
+    # @TODO @WIP
+    def act_on_capacity(self, trading_operator):
+        if self.state == 1 and self.capacity > 0:
+            trading_operator.order(
+                self.prod_meta["last_price_in_euro"],
+                self.capacity,
+                action_type="B",
+            )
 
-    #     else:
-    #         trading_api.make_an_order(action_type="s")
+        elif self.state == -1:
+            trading_operator.order("S")
+
+        else:
+            logger.info("No action, would hold and wait.")

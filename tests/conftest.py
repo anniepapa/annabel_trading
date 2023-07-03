@@ -233,34 +233,23 @@ def fake_prod_meta():
         "last_transaction_price": {
             "b": {
                 "transaction_datetime": "2023-06-15T16:11:58+02:00",
-                "price_foreign": Decimal("-40.6320"),
+                "price_foreign": Decimal("-38.7701"),
                 "last_buy_fx_rate": Decimal("11.5632"),
                 "quantity": Decimal("1.0000"),
+                "price_in_base_currency": Decimal(3.3529),
                 "total_plus_all_fees_in_euro": Decimal("-8.6776"),
             }
         },
         "last_price": Decimal("42.7701"),
         "response_datetime": "2023-06-30T17:20:27",
         "cashable": Decimal("133.6857"),
-        "last_price_in_euro": Decimal("3.795"),
+        "last_price_in_euro": Decimal("3.6227"),
     }
 
 
 @pytest.fixture
 def fake_prod_meta_down(fake_prod_meta):
-    fake_prod_meta.update(
-        {
-            "last_transaction_price": {
-                "b": {
-                    "transaction_datetime": "2023-06-15T16:11:58+02:00",
-                    "price_foreign": Decimal("49.9840"),
-                    "last_buy_fx_rate": Decimal("11.5632"),
-                    "quantity": Decimal("1.0000"),
-                    "total_plus_all_fees_in_euro": Decimal("-8.6776"),
-                }
-            }
-        }
-    )
+    fake_prod_meta.update({"last_price_in_euro": Decimal("2.9451")})
     return fake_prod_meta
 
 

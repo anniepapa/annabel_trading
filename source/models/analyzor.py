@@ -43,15 +43,13 @@ class TradingAnalyzor:
             Decimal(self.balance - trans_fee) / Decimal(1.0025)
         )
         self.last_price_in_euro = decimalize(self.last_price / fx_rate)
-        logger.info(
-            f"Calculating capacity: {self.cashable} on 20% position: "
-            f"{self.balance} divided by {self.last_price_in_euro}"
+        logger.debug(
+            f"Cashable: {self.cashable} base on "
+            f"balance: {self.balance} divided by last price in euro: "
+            f"{self.last_price_in_euro}"
         )
         capacity = decimalize(self.cashable / self.last_price_in_euro)
         self.capacity = math.floor(capacity)
-
-    def analyze_price_movements(self):
-        pass
 
     def act_on_capacity(self):
         if self.capacity < 1:

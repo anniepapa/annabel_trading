@@ -1,5 +1,6 @@
 import sys
 from datetime import datetime, timedelta
+from decimal import Decimal
 
 import degiro_connector.core.helpers.pb_handler as payload_handler
 from degiro_connector.trading.models.trading_pb2 import (  # noqa
@@ -85,14 +86,14 @@ class TradingOperator:
 
         return prod_meta
 
-    def make_an_order(self, product_id, price, size, action_type="B"):
+    def order(self, price, size, action_type="B"):
         action = self._decide_action(action_type)
 
         order = Order(
             action=action,
-            order_type=Order.OrderType.LIMIT,
+            order_type=Order.OrderType.STOP_LOSS,
             price=price,
-            product_id=product_id,
+            product_id=self.prod_meta["id"],
             size=size,
             time_type=Order.TimeType.GOOD_TILL_DAY,
         )
@@ -178,7 +179,7 @@ class TradingOperator:
         last_balance = get_last_valuta_balance(cash_movements)
         return decimalize(last_balance)
 
-    def _get_last_balance_via_cash_report(self):
+    def _get_last_balance_via_cash_report(self):  # to be tested more
         content_exists = self.__get_last_records("cash")
 
         content_of_last_balance = get_last_valuta_balance(
@@ -196,6 +197,10 @@ class TradingOperator:
                 "price_foreign": decimalize(last_transaction_details["price"]),
                 "last_buy_fx_rate": decimalize(
                     last_transaction_details["nettFxRate"]
+                ),
+                "price_in_base_currency": decimalize(
+                    Decimal(last_transaction_details["price"])
+                    / Decimal(last_transaction_details["nettFxRate"])
                 ),
                 "quantity": decimalize(last_transaction_details["quantity"]),
                 "total_plus_all_fees_in_euro": decimalize(
