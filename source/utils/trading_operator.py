@@ -1,5 +1,6 @@
 import sys
 from datetime import datetime, timedelta
+from decimal import Decimal
 
 import degiro_connector.core.helpers.pb_handler as payload_handler
 from degiro_connector.trading.models.trading_pb2 import (  # noqa
@@ -196,6 +197,10 @@ class TradingOperator:
                 "price_foreign": decimalize(last_transaction_details["price"]),
                 "last_buy_fx_rate": decimalize(
                     last_transaction_details["nettFxRate"]
+                ),
+                "price_in_base_currency": decimalize(
+                    Decimal(last_transaction_details["price"])
+                    / Decimal(last_transaction_details["nettFxRate"])
                 ),
                 "quantity": decimalize(last_transaction_details["quantity"]),
                 "total_plus_all_fees_in_euro": decimalize(

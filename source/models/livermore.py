@@ -36,22 +36,25 @@ class LivermoreTradingRule(TradingAnalyzor):
         last_buy_price = abs(
             self.prod_meta["last_transaction_price"]["b"]["price_foreign"]
         )
+        last_buy_in_base_currency = abs(
+            self.prod_meta["last_transaction_price"]["b"][
+                "price_in_base_currency"
+            ]
+        )
         last_buy_price_in_last_fx_rate = decimalize(
             last_buy_price / self.prod_meta["fx_rate"]
-        )
-        last_buy_price_in_old_fx_rate = decimalize(
-            last_buy_price
-            / self.prod_meta["last_transaction_price"]["b"][
-                "last_buy_fx_rate"
-            ]  # noqa
         )
 
         # self.last_sell_price = Decimal(self.pivot_hist["sell"][0]["price_foreign"])   # noqa
         last_price_in_euro = abs(self.prod_meta["last_price_in_euro"])
 
-        self.ratio_diff = decimalize(
-            (last_price_in_euro - last_buy_price_in_last_fx_rate)
-            / last_buy_price_in_old_fx_rate
+        diff = last_price_in_euro - last_buy_price_in_last_fx_rate
+        self.ratio_diff = decimalize(diff / last_buy_in_base_currency)
+
+        logger.debug(
+            f"{self.ratio_diff} on diff: {diff}, from {last_price_in_euro} - "
+            f"{last_buy_price_in_last_fx_rate}  / "
+            f"{last_buy_in_base_currency}"
         )
 
         if self.ratio_diff >= Decimal("0.1"):
