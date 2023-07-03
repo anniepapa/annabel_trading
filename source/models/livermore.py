@@ -90,6 +90,7 @@ class LivermoreTradingRule(TradingAnalyzor):
                 f"Not any pivot point yet, would hold it for now"
             )
 
+    # @TODO @WIP
     def act_on_capacity(self, trading_operator):
         if self.state == 1 and self.capacity > 0:
             trading_operator.order(
