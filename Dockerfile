@@ -4,8 +4,7 @@ COPY . /app
 COPY poetry.lock pyproject.toml /app/
 WORKDIR /app
 ENV PYTHONPATH=${PYTHONPATH}:source/
-ENV PORT 8080
-EXPOSE 8080
+
 RUN pip3 install poetry
 RUN poetry config virtualenvs.create false
 RUN poetry install
