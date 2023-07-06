@@ -91,7 +91,8 @@ class TradingOperator:
 
         order = Order(
             action=action,
-            order_type=Order.OrderType.STOP_LOSS,
+            order_type=Order.OrderType.STOP_LIMIT,
+            stop_price=price * Decimal(0.98),
             price=price,
             product_id=self.prod_meta["id"],
             size=size,

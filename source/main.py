@@ -24,7 +24,7 @@ def update_prod_meta(operator, consumer):
     )
 
 
-def main(stock_name, code):
+def main(stock_name, code, ratio_checkpoint="0.1"):
     logger.info(f"Start automatic trading for the stock: {stock_name}")
 
     with open("config/config.json") as config_file:
@@ -47,7 +47,9 @@ def main(stock_name, code):
         )
         logger.info(trading_operator.prod_meta)
 
-        livermore = LivermoreTradingRule(trading_operator.prod_meta)
+        livermore = LivermoreTradingRule(
+            trading_operator.prod_meta, decimalize(ratio_checkpoint)
+        )
         livermore.analyze()
         # livermore.act_on_capacity(trading_operator)
 

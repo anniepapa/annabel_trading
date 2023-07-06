@@ -33,6 +33,10 @@ Technical:
 # Virtualize:
 - docker build -t annabel_trading --rm .
 - docker run -it --rm annabel_trading
+- push to goolge cloud:
+    docker build -t eu.gcr.io/avian-volt-391821/annabel_trading:v1 --rm .
+    docker push eu.gcr.io/avian-volt-391821/annabel_trading:v1
+    gcrane cp -r eu.gcr.io/avian-volt-391821 europe-docker.pkg.dev/avian-volt-391821/eu.gcr.io
 
 
 # Acknowledgement
