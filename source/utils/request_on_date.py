@@ -73,7 +73,8 @@ class RequestTransactionsHistory(BaseRequestOnDate):
             request=self.request,
             raw=False,
         )
-        self.history = [dict(trans) for trans in history.values]
+        history = [dict(trans) for trans in history.values]
+        self.history = sorted(history, key=lambda x: x["date"], reverse=True)
 
 
 class RequestAccountHistoryOverview(BaseRequestOnDate):
@@ -100,16 +101,16 @@ class RequestAccountHistoryOverview(BaseRequestOnDate):
     @staticmethod
     def _get_movements_from_account_overview(raw_cash_movements):
         cash_movements = []
-
         for item in raw_cash_movements:
-            cash_movements.append(
-                {
-                    "value_date": item["valueDate"],
-                    "balance": item["balance"]["total"],
-                    "type": item["type"],
-                    "description": item["description"],
-                }
-            )
+            if "balance" in item:
+                cash_movements.append(
+                    {
+                        "value_date": item["valueDate"],
+                        "balance": item["balance"]["total"],
+                        "type": item["type"],
+                        "description": item["description"],
+                    }
+                )
 
         return sorted(
             cash_movements, key=lambda x: x["value_date"], reverse=True

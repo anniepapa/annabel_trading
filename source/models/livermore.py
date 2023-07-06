@@ -18,10 +18,11 @@ class LivermoreTradingRule(TradingAnalyzor):
     仓位(position): 是指投资人实际投资和实有投资资金的比例
     """
 
-    def __init__(self, prod_meta) -> None:
+    def __init__(self, prod_meta, ratio_checkpoint=Decimal("0.085")) -> None:
         self.initial_position = decimalize(
             Decimal("0.2") * prod_meta["cashable"]
         )
+        self.ratio_checkpoint = ratio_checkpoint
 
         self.ratio_diff = 0
         self.state = None
@@ -57,10 +58,10 @@ class LivermoreTradingRule(TradingAnalyzor):
             f"{last_buy_in_base_currency}"
         )
 
-        if self.ratio_diff >= Decimal("0.08"):
+        if self.ratio_diff >= self.ratio_checkpoint:
             self.state = 1
 
-        elif self.ratio_diff <= Decimal("-0.1"):
+        elif self.ratio_diff <= -self.ratio_checkpoint:
             self.state = -1
 
         else:
@@ -92,6 +93,31 @@ class LivermoreTradingRule(TradingAnalyzor):
 
     # @TODO @WIP
     def act_on_capacity(self, trading_operator):
+        """stop limit buy:  # noqa
+            In a stop-limit buy order, the stop price should be set below the limit price.
+
+            This ensures that the order is triggered when the stock price falls to or below
+                the stop price, and the subsequent limit order is executed at the specified
+                limit price or better.
+
+            Here's the corrected example for a stop-limit buy order:
+
+            Current market price: $50
+            Stop price: $45
+            Limit price: $46
+
+            In this example, you want to buy a security if its price drops to or below $45.
+                Once the stop price is reached or breached, the order is triggered and becomes a limit order.
+                The limit price of $46 specifies the maximum price you are willing to pay for the security.
+
+            Setting the stop price below the limit price ensures that the order is triggered before the
+                limit price is reached. If the stop price is equal to or higher than the limit price,
+                the order may be immediately executed as a market order when the stop condition is met,
+                potentially resulting in a purchase at a price higher than intended.
+
+        Args:
+            trading_operator (_type_): _description_
+        """
         if self.state == 1 and self.capacity > 0:
             trading_operator.order(
                 self.prod_meta["last_price_in_euro"],

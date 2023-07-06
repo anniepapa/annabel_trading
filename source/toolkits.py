@@ -28,14 +28,14 @@ def decimalize(value, prec=".0001"):
 
 def get_last_valuta_balance(content, key_name="description"):
     identifiers = tuple(
-        identifier.lower() for identifier in ("Valuta Crediting",)
+        identifier.lower() for identifier in ("Valuta Creditering",)
     )
 
     for item in content:
         if item[key_name].lower().startswith(identifiers):
             continue
 
-        return item.get("balance") or item.get("")
+        return str(item.get("balance")) or str(item.get(""))
 
 
 def sort_dict_string_content(string_csv):  # To be tested more
