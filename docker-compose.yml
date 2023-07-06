@@ -20,8 +20,8 @@ services:
     depends_on:
       - volvo
 
-  rivian:
-    image: annabel_trading
-    command: ["RIVIAN AUTOMOTIVE INC-A", "RIVN", "0.1"]
-    depends_on:
-      - volvo
+  # rivian:
+  #   image: annabel_trading
+  #   command: ["RIVIAN AUTOMOTIVE INC-A", "RIVN", "0.1"]
+  #   depends_on:
+  #     - volvo
