@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  volvo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: annabel_trading
+    command: ["VOLVO CAR AB", "VOLCAR B", "0.08"]
+
+  tesla:
+    image: annabel_trading
+    command: ["TESLA", "TSLA", "0.1"]
+    depends_on:
+      - volvo
+
+  faraday:
+    image: annabel_trading
+    command: ["FARADAY", "FFIE", "0.1"]
+    depends_on:
+      - volvo
+
+  # rivian:
+  #   image: annabel_trading
+  #   command: ["RIVIAN AUTOMOTIVE INC-A", "RIVN", "0.1"]
+  #   depends_on:
+  #     - volvo
