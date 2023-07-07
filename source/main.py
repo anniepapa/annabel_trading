@@ -2,7 +2,7 @@ import json
 from fire import Fire
 
 from my_logger import logger
-from toolkits import utc_to_cet, decimalize
+from toolkits import utc_to_cet, decimalize, pretty_table
 from utils import (
     DegiroConnection,
     TradingOperator,
@@ -45,13 +45,18 @@ def main(stock_name, code, ratio_checkpoint="0.1"):
                 "last_price_in_euro": pre_analysis.last_price_in_euro,
             }
         )
-        logger.info(trading_operator.prod_meta)
+        logger.info(
+            f"Meta before livermore: {pretty_table(trading_operator.prod_meta)}"    # noqa
+        )
 
         livermore = LivermoreTradingRule(
             trading_operator.prod_meta, decimalize(ratio_checkpoint)
         )
         livermore.analyze()
         livermore.act_on_capacity(trading_operator)
+        logger.info(
+            f"Meta after livermore: {pretty_table(livermore.prod_meta)}"    # noqa
+        )
 
 
 if __name__ == "__main__":
