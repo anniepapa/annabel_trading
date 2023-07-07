@@ -11,4 +11,4 @@ def test_livermore_integration(fake_prod_meta):
     new_position = decimalize(Decimal("0.2") * fake_prod_meta["cashable"])
 
     assert fake_livermore.prod_meta["last_balance"] == new_position
-    assert fake_livermore.capacity == 6
+    assert fake_livermore.capacity == 5

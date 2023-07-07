@@ -413,6 +413,17 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
+name = "tenacity"
+version = "8.2.2"
+description = "Retry code until it succeeds"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.extras]
+doc = ["reno", "sphinx", "tornado (>=4.5)"]
+
+[[package]]
 name = "termcolor"
 version = "2.3.0"
 description = "ANSI color formatting for output in terminal"
@@ -486,7 +497,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "c9f17efa4db1ce929403d6fb1f950329a18fa0f225381c1157a8eb42c8ac68f8"
+content-hash = "5cd55a63d1779d2d11d74a338873ea4013f806ccf6fef317b123ad33c7c21dca"
 
 [metadata.files]
 apscheduler = []
@@ -524,6 +535,7 @@ python-dateutil = []
 pytz = []
 requests = []
 six = []
+tenacity = []
 termcolor = []
 tomli = []
 typing-extensions = []

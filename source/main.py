@@ -51,7 +51,7 @@ def main(stock_name, code, ratio_checkpoint="0.1"):
             trading_operator.prod_meta, decimalize(ratio_checkpoint)
         )
         livermore.analyze()
-        # livermore.act_on_capacity(trading_operator)
+        livermore.act_on_capacity(trading_operator)
 
 
 if __name__ == "__main__":

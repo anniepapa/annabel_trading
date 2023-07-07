@@ -76,7 +76,6 @@ class TradingOperator:
                     "stock_currency": prod["currency"],
                     "close_price": prod["closePrice"],
                     "close_price_date": prod["closePriceDate"],
-                    "trans_fee": decimalize(4.9),
                     "last_balance": self._get_last_balance_via_account_overview(),  # noqa
                 }
                 break
@@ -136,6 +135,12 @@ class TradingOperator:
         request = BaseRequestOnDate.create(type_of_hist, **kwargs)
         request.get_response(api=self.trading_api)
 
+        if not request.history:
+            logger.warning(
+                f"⚠ {request._HIST_TYPE}: {request.request} returns "
+                f"empty history."
+            )
+
         return request
 
     def get_products_from_ids(self, list_of_ids):
@@ -191,21 +196,30 @@ class TradingOperator:
 
     def _get_last_transaction_price(self):
         self.product_id = self.prod_meta["id"]
-        last_transaction_details = self.__get_last_records("transaction")[0]
+        last_trans_details = self.__get_last_records("transaction")[0]
         last_transaction = {
-            last_transaction_details["buysell"].lower(): {
-                "transaction_datetime": last_transaction_details["date"],
-                "price_foreign": decimalize(last_transaction_details["price"]),
+            last_trans_details["buysell"].lower(): {
+                "transaction_datetime": last_trans_details["date"],
+                "price_foreign": decimalize(last_trans_details["price"]),
                 "last_buy_fx_rate": decimalize(
-                    last_transaction_details["nettFxRate"]
+                    last_trans_details["nettFxRate"]
                 ),
                 "price_in_base_currency": decimalize(
-                    Decimal(last_transaction_details["price"])
-                    / Decimal(last_transaction_details["nettFxRate"])
+                    Decimal(last_trans_details["price"])
+                    / Decimal(last_trans_details["nettFxRate"])
                 ),
-                "quantity": decimalize(last_transaction_details["quantity"]),
+                "quantity": decimalize(last_trans_details["quantity"]),
+                "trans_fee_in_euro": decimalize(
+                    last_trans_details["feeInBaseCurrency"]
+                ),
+                "autofx_rate_in_euro": decimalize(
+                    last_trans_details["autoFxFeeInBaseCurrency"]
+                ),
+                "total_fees_in_euro": decimalize(
+                    last_trans_details["totalFeesInBaseCurrency"]
+                ),
                 "total_plus_all_fees_in_euro": decimalize(
-                    last_transaction_details["totalPlusAllFeesInBaseCurrency"]
+                    last_trans_details["totalPlusAllFeesInBaseCurrency"]
                 ),
             }
         }
@@ -217,7 +231,7 @@ class TradingOperator:
         to_year, to_mon, to_day = today.year, today.month, today.day
         history_records, d = [], 0
 
-        while d <= 31 and not history_records:
+        while d <= 31 * 12 and not history_records:
             prev_week = today - timedelta(days=d)
             from_year, from_mon, from_day = (
                 prev_week.year,
@@ -254,7 +268,8 @@ class TradingOperator:
                         f"for {self.product_id} from the past {d} days."
                     )
 
-            d += 7
+            d += 31
+
         return history_records
 
     @staticmethod
