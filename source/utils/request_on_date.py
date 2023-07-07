@@ -5,7 +5,6 @@ from degiro_connector.trading.models.trading_pb2 import (  # noqa
     CashAccountReport,
 )
 
-from my_logger import logger
 from toolkits import sort_dict_string_content
 
 
@@ -23,6 +22,7 @@ class BaseRequestOnDate:
 
     def __init__(self) -> None:
         self.request = None
+        self.history = []
 
     @classmethod
     def create(cls, hist_type, **params):
@@ -60,8 +60,8 @@ class RequestOrdersHistory(BaseRequestOnDate):
             request=self.request,
             raw=False,
         )
-
-        self.history = [dict(order) for order in history.values]
+        if history:
+            self.history = [dict(order) for order in history.values]
 
 
 class RequestTransactionsHistory(BaseRequestOnDate):
@@ -73,8 +73,11 @@ class RequestTransactionsHistory(BaseRequestOnDate):
             request=self.request,
             raw=False,
         )
-        history = [dict(trans) for trans in history.values]
-        self.history = sorted(history, key=lambda x: x["date"], reverse=True)
+        if history:
+            history = [dict(trans) for trans in history.values]
+            self.history = sorted(
+                history, key=lambda x: x["date"], reverse=True
+            )
 
 
 class RequestAccountHistoryOverview(BaseRequestOnDate):
@@ -87,13 +90,7 @@ class RequestAccountHistoryOverview(BaseRequestOnDate):
             raw=False,
         ).values
 
-        if not history:
-            logger.warning(
-                f"⚠ {self._HIST_TYPE}: {self.request} returns empty history"
-            )
-            self.history = []
-
-        else:
+        if history:
             self.history = self._get_movements_from_account_overview(
                 history["cashMovements"]
             )

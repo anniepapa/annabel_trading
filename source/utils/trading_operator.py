@@ -136,6 +136,12 @@ class TradingOperator:
         request = BaseRequestOnDate.create(type_of_hist, **kwargs)
         request.get_response(api=self.trading_api)
 
+        if not request.history:
+            logger.warning(
+                f"⚠ {request._HIST_TYPE}: {request.request} returns "
+                f"empty history."
+            )
+
         return request
 
     def get_products_from_ids(self, list_of_ids):
