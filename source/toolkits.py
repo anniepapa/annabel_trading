@@ -10,6 +10,7 @@ def pretty_table(target_table):
         target_table,
         sort_keys=True,
         indent=4,
+        default=str,
     )
 
 
