@@ -199,7 +199,7 @@ def target_meta():
                 "last_buy_fx_rate": Decimal("11.5632"),
                 "quantity": Decimal("1.0000"),
                 "price_in_base_currency": Decimal(3.3529),
-                "autofx_rate_in_euro": Decimal(0.025),
+                "autofx_rate_in_euro": Decimal(0.0025),
                 "trans_fee_in_euro": Decimal("4.9"),
                 "total_plus_all_fees_in_euro": Decimal("-8.6776"),
             }
@@ -227,7 +227,7 @@ def target_meta_negative():
                 "last_buy_fx_rate": Decimal("11.5632"),
                 "quantity": Decimal("1.0000"),
                 "price_in_base_currency": Decimal(3.3529),
-                "autofx_rate_in_euro": Decimal(0.025),
+                "autofx_rate_in_euro": Decimal(0.0025),
                 "trans_fee_in_euro": Decimal("4.9"),
                 "total_plus_all_fees_in_euro": Decimal("-8.6776"),
             }
