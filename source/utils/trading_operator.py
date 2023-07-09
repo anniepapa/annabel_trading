@@ -98,13 +98,46 @@ class TradingOperator:
                 )
                 raise SystemExit
 
-    def order(self, price, size, action_type="B"):
-        action = self._decide_action(action_type)
+    def order(self, action_type):
+        """stop limit BUY:  # noqa
+            In a stop-limit buy order, the stop price should be set below the limit price.
+            In addition, on degiro, seems stop price has to higher than the last price. Example:
+
+            - last price: $24,70
+            - stop price (minimal valid value): $24.71
+            - limit sell (minimal valid value): $24.72
+
+            This ensures that the order is triggered when the stock price falls to or below
+                the stop price, and the subsequent limit order is executed at the specified
+                limit price or better.
+
+            stop limit SELL:
+            - last price: $274,32
+            - stop price (minimal valid value, equal or lower is allowed): $274,32 / 33
+            - limit buy (minimal valid value, must lower than stop price): $274,31 / 32
+
+            action: 1 == sell
+            action: 0 == buy
+
+        Args:
+            action_type (str): _description_.
+        """
+        if action_type == "B":
+            action = Order.Action.BUY
+            stop_price = self.prod_meta["last_price_in_euro"] + Decimal("0.01")
+            price = self.prod_meta["last_price_in_euro"] + Decimal("0.02")
+            size = self.prod_meta["capacity"]
+
+        else:
+            action = Order.Action.SELL
+            stop_price = self.prod_meta["last_price_in_euro"] - Decimal("0.01")
+            price = self.prod_meta["last_price_in_euro"] - Decimal("0.02")
+            size = self.prod_meta["hold_qty"]
 
         order = Order(
             action=action,
             order_type=Order.OrderType.STOP_LIMIT,
-            stop_price=price * Decimal(0.98),
+            stop_price=stop_price,
             price=price,
             product_id=self.prod_meta["id"],
             size=size,
@@ -314,20 +347,3 @@ class TradingOperator:
             d += 31
 
         return history_records
-
-    @staticmethod
-    def _decide_action(action_type):
-        action_type = action_type.lower()
-
-        if action_type in ("b", "buy"):
-            return Order.Action.BUY
-
-        elif action_type in ("s", "sell"):
-            return Order.Action.SELL
-
-        else:
-            logger.warning(
-                f"{action_type} is unclear. It must be either B or S. "
-                f"Trading app will exit."
-            )
-            raise
