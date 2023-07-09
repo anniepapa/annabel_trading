@@ -42,7 +42,7 @@ def main(stock_name, code, ratio_checkpoint="0.1"):
 
     with DegiroConnection(config_dict) as trading_api:
         trading_operator = TradingOperator(stock_name, code, trading_api)
-        # trading_operator.check_pending_order()
+        trading_operator.check_pending_order()
 
         prod_consumer = ProductConsumer(config_dict["user_token"])
         update_prod_meta(trading_operator, prod_consumer)
@@ -50,22 +50,25 @@ def main(stock_name, code, ratio_checkpoint="0.1"):
         pre_analysis = TradingAnalyzor()
         pre_analysis.analyze_capacity(**trading_operator.prod_meta)
         pre_analysis.act_on_capacity()
-
         trading_operator.prod_meta.update(
             {
                 "cashable": pre_analysis.cashable,
                 "last_price_in_euro": pre_analysis.last_price_in_euro,
             }
         )
-        logger.info(f"👉👉 Meta before livermore: {trading_operator.prod_meta}")
 
+        logger.info(f"👉👉 Meta before livermore: {trading_operator.prod_meta}")
         livermore = LivermoreTradingRule(
             trading_operator.prod_meta, decimalize(ratio_checkpoint)
         )
         livermore.analyze()
         logger.info(f"👉👉 Meta after livermore: {livermore.prod_meta}")
+
         livermore.act_on_capacity(trading_operator)
 
 
 if __name__ == "__main__":
-    Fire(main)
+    try:
+        Fire(main)
+    except Exception as err:
+        raise err
