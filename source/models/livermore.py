@@ -27,7 +27,7 @@ class LivermoreTradingRule(TradingAnalyzor):
         "capacity",
     )
 
-    def __init__(self, prod_meta, ratio_checkpoint=Decimal("0.07")) -> None:
+    def __init__(self, prod_meta, ratio_checkpoint=Decimal("0.01")) -> None:
         self.initial_position = decimalize(
             Decimal("0.2") * prod_meta["cashable"]
         )
