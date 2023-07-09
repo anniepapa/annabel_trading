@@ -139,7 +139,7 @@ class TradingOperator:
             order_type=Order.OrderType.STOP_LIMIT,
             stop_price=stop_price,
             price=price,
-            product_id=self.prod_meta["id"],
+            product_id=int(self.prod_meta["id"]),
             size=size,
             time_type=Order.TimeType.GOOD_TILL_DAY,
         )
