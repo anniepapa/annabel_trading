@@ -23,6 +23,14 @@ def update_prod_meta(operator, consumer):
     operator.prod_meta.update(
         {"last_price": last_price, "response_datetime": datetime}
     )
+    operator.prod_meta.update(
+        {
+            "last_price_in_euro": decimalize(
+                operator.prod_meta["last_price"]
+                / operator.prod_meta["fx_rate"]
+            )
+        }
+    )
 
 
 def check_annabel_toy():
@@ -48,12 +56,12 @@ def main(stock_name, code, ratio_checkpoint="0.1"):
         update_prod_meta(trading_operator, prod_consumer)
 
         pre_analysis = TradingAnalyzor()
-        pre_analysis.analyze_capacity(**trading_operator.prod_meta)
+        pre_analysis.analyze_capacity(trading_operator.prod_meta)
         pre_analysis.act_on_capacity()
         trading_operator.prod_meta.update(
             {
                 "cashable": pre_analysis.cashable,
-                "last_price_in_euro": pre_analysis.last_price_in_euro,
+                "capacity": pre_analysis.capacity,
             }
         )
 
@@ -62,6 +70,12 @@ def main(stock_name, code, ratio_checkpoint="0.1"):
             trading_operator.prod_meta, decimalize(ratio_checkpoint)
         )
         livermore.analyze()
+        trading_operator.prod_meta.update(
+            {
+                "cashable": livermore.cashable,
+                "capacity": livermore.capacity,
+            }
+        )
         logger.info(f"👉👉 Meta after livermore: {livermore.prod_meta}")
 
         livermore.act_on_capacity(trading_operator)

@@ -205,6 +205,7 @@ def target_meta():
             }
         },
         "last_balance": Decimal("100"),
+        "last_price_in_euro": Decimal("3.6145"),
     }
 
 
@@ -233,6 +234,7 @@ def target_meta_negative():
             }
         },
         "last_balance": Decimal("7.99"),
+        "last_price_in_euro": Decimal("3.6145"),
     }
 
 
