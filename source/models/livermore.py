@@ -18,6 +18,15 @@ class LivermoreTradingRule(TradingAnalyzor):
     仓位(position): 是指投资人实际投资和实有投资资金的比例
     """
 
+    __slot__ = (
+        "initial_position",
+        "ratio_checkpoint",
+        "ratio_diff",
+        "state",
+        "prod_meta",
+        "capacity",
+    )
+
     def __init__(self, prod_meta, ratio_checkpoint=Decimal("0.07")) -> None:
         self.initial_position = decimalize(
             Decimal("0.2") * prod_meta["cashable"]
@@ -96,6 +105,11 @@ class LivermoreTradingRule(TradingAnalyzor):
     def act_on_capacity(self, trading_operator):
         """stop limit buy:  # noqa
             In a stop-limit buy order, the stop price should be set below the limit price.
+            In addition, on degiro, seems stop price has to higher than the last price. Example:
+
+            - last price: $24,70
+            - stop price (minimal valid value): $24.71
+            - limit sell (minimal valid value): $24.72
 
             This ensures that the order is triggered when the stock price falls to or below
                 the stop price, and the subsequent limit order is executed at the specified
@@ -115,6 +129,14 @@ class LivermoreTradingRule(TradingAnalyzor):
                 limit price is reached. If the stop price is equal to or higher than the limit price,
                 the order may be immediately executed as a market order when the stop condition is met,
                 potentially resulting in a purchase at a price higher than intended.
+
+            stop limit buy:
+            - last price: $274,32
+            - stop price (minimal valid value, equal or lower is allowed): $274,32 / 33
+            - limit buy (minimal valid value, must lower than stop price): $274,31 / 32
+
+            action: 1 == sell
+            action: 0 == buy
 
         Args:
             trading_operator (_type_): _description_
@@ -136,7 +158,10 @@ class LivermoreTradingRule(TradingAnalyzor):
 
         elif self.state == -1:
             # trading_operator.order("S")
-            logger.info(f"☢ Seriously, let's sell {self.prod_meta['name']}")
+            logger.info(
+                f"☢ Seriously, time to sell all {self.prod_meta['hold_qty']} "
+                f"{self.prod_meta['name']}"
+            )
 
         else:
             logger.info(f"No action, hold {self.prod_meta['name']} and wait.")

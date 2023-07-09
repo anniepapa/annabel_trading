@@ -1,4 +1,5 @@
 import json
+import os
 from fire import Fire
 
 from my_logger import logger
@@ -24,14 +25,25 @@ def update_prod_meta(operator, consumer):
     )
 
 
+def check_annabel_toy():
+    if os.getenv("annabel_toy"):
+        pass
+    else:
+        logger.error("ENV var: annabel toy doesn't exit. Process will stop")
+        raise SystemExit
+
+
 def main(stock_name, code, ratio_checkpoint="0.1"):
     logger.info(f"Start automatic trading for the stock: {stock_name}")
+    check_annabel_toy()
 
     with open("config/config.json") as config_file:
         config_dict = json.load(config_file)
 
     with DegiroConnection(config_dict) as trading_api:
         trading_operator = TradingOperator(stock_name, code, trading_api)
+        # trading_operator.check_pending_order()
+
         prod_consumer = ProductConsumer(config_dict["user_token"])
         update_prod_meta(trading_operator, prod_consumer)
 
@@ -45,13 +57,13 @@ def main(stock_name, code, ratio_checkpoint="0.1"):
                 "last_price_in_euro": pre_analysis.last_price_in_euro,
             }
         )
-        logger.info(f"Meta before livermore: {trading_operator.prod_meta}")
+        logger.info(f"👉👉 Meta before livermore: {trading_operator.prod_meta}")
 
         livermore = LivermoreTradingRule(
             trading_operator.prod_meta, decimalize(ratio_checkpoint)
         )
         livermore.analyze()
-        logger.info(f"Meta after livermore: {livermore.prod_meta}")
+        logger.info(f"👉👉 Meta after livermore: {livermore.prod_meta}")
         livermore.act_on_capacity(trading_operator)
 
 

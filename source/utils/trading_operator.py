@@ -7,6 +7,7 @@ from degiro_connector.trading.models.trading_pb2 import (  # noqa
     ProductSearch,
     ProductsInfo,
     Order,
+    Update,
 )
 
 from utils import BaseRequestOnDate
@@ -26,6 +27,7 @@ class TradingOperator:
         "account_info",
         "product_id",
         "prod_meta",
+        "updates",
     )
 
     def __init__(self, keyword, code, trading_api=None):
@@ -41,11 +43,13 @@ class TradingOperator:
         self.account_info = self._get_account_info()
         self.product_id = None
         self.prod_meta = self.initiate_prod_meta_from_str()
+        self.updates = self._get_pending_order()
 
         self.prod_meta.update(
             {
                 "fx_rate": self._get_fx_rate(self.prod_meta["stock_currency"]),
                 "code": self.code.replace(" ", "_"),
+                "hold_qty": self._get_hold_qty(),
             }
         )
         self._get_last_transaction_price()
@@ -71,7 +75,7 @@ class TradingOperator:
                 )
                 prod_meta = {
                     "name": prod["name"],
-                    "id": prod["id"],
+                    "id": str(prod["id"]),
                     "vwd_id": prod["vwdId"],
                     "stock_currency": prod["currency"],
                     "close_price": prod["closePrice"],
@@ -84,6 +88,15 @@ class TradingOperator:
             sys.exit()
 
         return prod_meta
+
+    def check_pending_order(self):
+        for order in self.updates["orders"]["values"]:
+            if str(order["product_id"]) == self.prod_meta["id"]:
+                logger.info(
+                    f"{order['product']} has pending order: {order}. \n"
+                    f"🎈🎈Annable will do nothing and exit."
+                )
+                raise SystemExit
 
     def order(self, price, size, action_type="B"):
         action = self._decide_action(action_type)
@@ -180,6 +193,12 @@ class TradingOperator:
         account_info_table = self.trading_api.get_account_info()
         return account_info_table["data"]
 
+    def _get_last_balance_via_updates(self):
+        last_balance = self.updates["total_portfolio"]["values"][
+            "freeSpaceNew"
+        ]["EUR"]
+        return decimalize(str(last_balance))
+
     def _get_last_balance_via_account_overview(self):
         cash_movements = self.__get_last_records("account")
         last_balance = get_last_valuta_balance(cash_movements)
@@ -225,6 +244,30 @@ class TradingOperator:
         }
 
         self.prod_meta.update({"last_transaction_price": last_transaction})
+
+    def _get_pending_order(self):
+        request_list = Update.RequestList()
+        request_list.values.extend(
+            [
+                Update.Request(option=Update.Option.ORDERS, last_updated=0),
+                Update.Request(option=Update.Option.PORTFOLIO, last_updated=0),
+                Update.Request(
+                    option=Update.Option.TOTALPORTFOLIO, last_updated=0
+                ),
+            ]
+        )
+
+        update = self.trading_api.get_update(request_list=request_list)
+        update_dict = payload_handler.message_to_dict(message=update)
+        return update_dict
+
+    def _get_hold_qty(self):
+        for portfolio in self.updates["portfolio"]["values"]:
+            if portfolio["id"] == self.prod_meta["id"]:
+                logger.info(
+                    f"{self.prod_meta['name']} has qty: {portfolio['size']}"
+                )
+                return abs(int(portfolio["size"]))
 
     def __get_last_records(self, type_name):
         today = datetime.now()
