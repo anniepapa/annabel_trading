@@ -94,7 +94,7 @@ class TradingOperator:
             if str(order["product_id"]) == self.prod_meta["id"]:
                 logger.info(
                     f"{order['product']} has pending order: {order}. \n"
-                    f"🎈🎈Annable will do nothing and exit."
+                    f"🎈🎈Annabel will do nothing and exit."
                 )
                 raise SystemExit
 
