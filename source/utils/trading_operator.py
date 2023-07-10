@@ -50,6 +50,7 @@ class TradingOperator:
                 "fx_rate": self._get_fx_rate(self.prod_meta["stock_currency"]),
                 "code": self.code.replace(" ", "_"),
                 "hold_qty": self._get_hold_qty(),
+                "last_balance": self._get_last_balance_via_updates(),
             }
         )
         self._get_last_transaction_price()
@@ -80,7 +81,6 @@ class TradingOperator:
                     "stock_currency": prod["currency"],
                     "close_price": decimalize(prod["closePrice"], prec=".01"),
                     "close_price_date": prod["closePriceDate"],
-                    "last_balance": self._get_last_balance_via_account_overview(),  # noqa
                 }
                 break
         else:
