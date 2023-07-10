@@ -145,22 +145,14 @@ class TradingOperator:
         """
         if action_type == "B":
             action = Order.Action.BUY
-            stop_price = decimalize(
-                self.prod_meta["last_price"] + Decimal("0.01"), prec=".0001"
-            )
-            price = decimalize(
-                self.prod_meta["last_price"] + Decimal("0.02"), prec=".0001"
-            )
+            stop_price = self.prod_meta["last_price"] + Decimal("0.01")
+            price = self.prod_meta["last_price"] + Decimal("0.02")
             size = self.prod_meta["capacity"]
 
         else:
             action = Order.Action.SELL
-            stop_price = decimalize(
-                self.prod_meta["last_price"] - Decimal("0.01"), prec=".0001"
-            )
-            price = decimalize(
-                self.prod_meta["last_price"] - Decimal("0.02"), prec=".0001"
-            )
+            stop_price = self.prod_meta["last_price"] - Decimal("0.01")
+            price = self.prod_meta["last_price"] - Decimal("0.02")
             size = self.prod_meta["hold_qty"]
 
         logger.info(
@@ -172,8 +164,8 @@ class TradingOperator:
         order = Order(
             action=action,
             order_type=Order.OrderType.STOP_LIMIT,
-            stop_price=stop_price,
-            price=price,
+            stop_price=decimalize(stop_price, prec=".0001"),
+            price=decimalize(price, prec=".0001"),
             product_id=int(self.prod_meta["id"]),
             size=size,
             time_type=Order.TimeType.GOOD_TILL_DAY,
