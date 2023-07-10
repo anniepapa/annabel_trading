@@ -1,11 +1,3 @@
-"""I would like to pay tribute to Mr. Livermore
-from this childish script with full respect and expectation.
-
-I would also learn and combine livermore with RSI divergence indicator after
-livermore module is deployed
-
-Additionally, for my beloved daughters: Annie & Bella
-"""
 from decimal import Decimal
 
 from my_logger import logger
@@ -57,7 +49,6 @@ class LivermoreTradingRule(TradingAnalyzor):
             last_buy_price / self.prod_meta["fx_rate"]
         )
 
-        # self.last_sell_price = Decimal(self.pivot_hist["sell"][0]["price_foreign"])   # noqa
         last_price_in_euro = abs(self.prod_meta["last_price_in_euro"])
 
         diff = last_price_in_euro - last_buy_price_in_last_fx_rate
