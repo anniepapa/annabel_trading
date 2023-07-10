@@ -131,5 +131,6 @@ class LivermoreTradingRule(TradingAnalyzor):
 
         else:
             logger.info(
-                f"🤖 No action, hold {self.prod_meta['name']} and wait."
+                f"🤖 Either insufficient capacity or no inflection point... "
+                f"hold {self.prod_meta['name']} and wait."
             )

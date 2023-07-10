@@ -78,7 +78,7 @@ class TradingOperator:
                     "id": str(prod["id"]),
                     "vwd_id": prod["vwdId"],
                     "stock_currency": prod["currency"],
-                    "close_price": prod["closePrice"],
+                    "close_price": decimalize(prod["closePrice"], prec=".01"),
                     "close_price_date": prod["closePriceDate"],
                     "last_balance": self._get_last_balance_via_account_overview(),  # noqa
                 }
@@ -93,7 +93,7 @@ class TradingOperator:
         for order in self.updates["orders"]["values"]:
             if str(order["product_id"]) == self.prod_meta["id"]:
                 logger.info(
-                    f"{order['product']} has pending order: {order}. \n"
+                    f"{order['product']} has a pending order: {order}. \n"
                     f"🎈🎈Annabel will do nothing and exit."
                 )
                 raise SystemExit
@@ -183,8 +183,7 @@ class TradingOperator:
 
         if not request.history:
             logger.warning(
-                f"⚠ {request._HIST_TYPE}: {request.request} returns "
-                f"empty history."
+                f"⚠ {request._HIST_TYPE}: {kwargs} returns empty history."
             )
 
         return request

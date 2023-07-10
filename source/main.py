@@ -1,6 +1,7 @@
 import json
 import os
 from fire import Fire
+from decimal import Decimal
 
 from my_logger import logger
 from toolkits import utc_to_cet, decimalize
@@ -16,7 +17,7 @@ def update_prod_meta(operator, consumer):
     consumer.subscribe(operator.prod_meta["vwd_id"])
     last_price = decimalize(
         consumer.realtime_dict.get("LastPrice")
-        or consumer.realtime_dict.get("AskPrice")
+        or operator.prod_meta["close_price"]
     )
     datetime = utc_to_cet(consumer.realtime_dict["response_datetime"])
 
@@ -67,7 +68,7 @@ def main(stock_name, code, ratio_checkpoint="0.1"):
 
         logger.info(f"👉👉 Meta before livermore: {trading_operator.prod_meta}")
         livermore = LivermoreTradingRule(
-            trading_operator.prod_meta, decimalize(ratio_checkpoint)
+            trading_operator.prod_meta, Decimal(str(ratio_checkpoint))
         )
         livermore.analyze()
         trading_operator.prod_meta.update(
