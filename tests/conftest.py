@@ -189,10 +189,23 @@ def target_meta():
         "stock_currency": "SEK",
         "close_price": 42.76,
         "close_price_date": "2023-06-23",
-        "last_price": 42.77,
-        "fx_rate": 11.5833,
-        "trans_fee": 4.9,
-        "last_balance": 100,
+        "last_price": Decimal("42.77"),
+        "fx_rate": Decimal("11.5833"),
+        "code": "volcar_b",
+        "last_transaction_price": {
+            "b": {
+                "transaction_datetime": "2023-06-15T16:11:58+02:00",
+                "price_foreign": Decimal("-38.7701"),
+                "last_buy_fx_rate": Decimal("11.5632"),
+                "quantity": Decimal("1.0000"),
+                "price_in_base_currency": Decimal(3.3529),
+                "autofx_rate_in_euro": Decimal(0.0025),
+                "trans_fee_in_euro": Decimal("4.9"),
+                "total_plus_all_fees_in_euro": Decimal("-8.6776"),
+            }
+        },
+        "last_balance": Decimal("100"),
+        "last_price_in_euro": Decimal("3.6145"),
     }
 
 
@@ -205,10 +218,23 @@ def target_meta_negative():
         "stock_currency": "SEK",
         "close_price": 42.76,
         "close_price_date": "2023-06-23",
-        "last_price": 42.77,
-        "fx_rate": 11.5833,
-        "trans_fee": 4.9,
-        "last_balance": 7.99,
+        "last_price": Decimal("42.77"),
+        "fx_rate": Decimal("11.5833"),
+        "code": "volcar_b",
+        "last_transaction_price": {
+            "b": {
+                "transaction_datetime": "2023-06-15T16:11:58+02:00",
+                "price_foreign": Decimal("-38.7701"),
+                "last_buy_fx_rate": Decimal("11.5632"),
+                "quantity": Decimal("1.0000"),
+                "price_in_base_currency": Decimal(3.3529),
+                "autofx_rate_in_euro": Decimal(0.0025),
+                "trans_fee_in_euro": Decimal("4.9"),
+                "total_plus_all_fees_in_euro": Decimal("-8.6776"),
+            }
+        },
+        "last_balance": Decimal("7.99"),
+        "last_price_in_euro": Decimal("3.6145"),
     }
 
 
@@ -237,6 +263,8 @@ def fake_prod_meta():
                 "last_buy_fx_rate": Decimal("11.5632"),
                 "quantity": Decimal("1.0000"),
                 "price_in_base_currency": Decimal(3.3529),
+                "autofx_rate_in_euro": Decimal(0.025),
+                "trans_fee_in_euro": Decimal("4.9"),
                 "total_plus_all_fees_in_euro": Decimal("-8.6776"),
             }
         },
