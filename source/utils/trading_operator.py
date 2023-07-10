@@ -124,15 +124,29 @@ class TradingOperator:
         """
         if action_type == "B":
             action = Order.Action.BUY
-            stop_price = self.prod_meta["last_price_in_euro"] + Decimal("0.01")
-            price = self.prod_meta["last_price_in_euro"] + Decimal("0.02")
+            stop_price = decimalize(
+                self.prod_meta["last_price"] + Decimal("0.01"), prec=".0001"
+            )
+            price = decimalize(
+                self.prod_meta["last_price"] + Decimal("0.02"), prec=".0001"
+            )
             size = self.prod_meta["capacity"]
 
         else:
             action = Order.Action.SELL
-            stop_price = self.prod_meta["last_price_in_euro"] - Decimal("0.01")
-            price = self.prod_meta["last_price_in_euro"] - Decimal("0.02")
+            stop_price = decimalize(
+                self.prod_meta["last_price"] - Decimal("0.01"), prec=".0001"
+            )
+            price = decimalize(
+                self.prod_meta["last_price"] - Decimal("0.02"), prec=".0001"
+            )
             size = self.prod_meta["hold_qty"]
+
+        logger.info(
+            f"🤖 Annabel is ordering: {action_type} for {size}: "
+            f"{self.prod_meta['name']} on {price} triggered on stop price: "
+            f"{stop_price} base on last price: {self.prod_meta['last_price']}"
+        )
 
         order = Order(
             action=action,
