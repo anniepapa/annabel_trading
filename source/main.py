@@ -55,6 +55,7 @@ def main(stock_name, code, ratio_checkpoint="0.1"):
 
         prod_consumer = ProductConsumer(config_dict["user_token"])
         update_prod_meta(trading_operator, prod_consumer)
+        trading_operator.check_hold_status()
 
         pre_analysis = TradingAnalyzor()
         pre_analysis.analyze_capacity(trading_operator.prod_meta)
