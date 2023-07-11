@@ -62,14 +62,15 @@ class LivermoreTradingRule(TradingAnalyzor):
         if self.ratio_diff >= self.ratio_checkpoint:
             self.state = 1
 
-        elif self.ratio_diff <= -self.ratio_checkpoint:
+        elif self.ratio_diff <= -self.ratio_checkpoint + Decimal("0.01"):
             self.state = -1
 
         else:
             None
 
     def analyze(self):
-        ratio_str = self.ratio_checkpoint * 100
+        checkpoint_up = self.ratio_checkpoint * 100
+        checkpoint_down = (-self.ratio_checkpoint + Decimal("0.01")) * 100
         self.analyze_trend()
         self.analyze_capacity(self.prod_meta)
 
@@ -77,7 +78,7 @@ class LivermoreTradingRule(TradingAnalyzor):
             logger.info(
                 f"💹 Livermore: The last price of {self.prod_meta['name']} "
                 f"has 🚀: {self.ratio_diff*100}% up against the checkpoint: "
-                f"{ratio_str}%. Time to buy 20% more. "
+                f"{checkpoint_up}%. Time to buy 20% more. "
                 f"Max to add: {self.capacity} base on 20% cashable position."
             )
 
@@ -85,14 +86,15 @@ class LivermoreTradingRule(TradingAnalyzor):
             logger.info(
                 f"🈹 Livermore: The last price of {self.prod_meta['name']} "
                 f"has 💥: {self.ratio_diff*100}% down against the "
-                f"checkpoint: {ratio_str}%. Time to sell all."
+                f"checkpoint: {checkpoint_down}%. Time to sell all."
             )
 
         else:
             logger.info(
                 f"🧭 Livermore: Price change of {self.prod_meta['name']}: "
                 f"{self.ratio_diff*100}% against the checkpoint: "
-                f"{ratio_str}%. No pivot point, hold it for now."
+                f"{checkpoint_down}% ~ {checkpoint_up}%. "
+                f"No pivot point, hold it for now."
             )
 
     # @TODO @WIP
