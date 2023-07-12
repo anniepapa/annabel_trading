@@ -35,7 +35,9 @@ def update_prod_meta(operator, consumer):
 
 
 def check_annabel_toy():
-    if os.getenv("annabel_toy"):
+    if os.getenv("annabel_toy") and os.getenv(
+        "GOOGLE_APPLICATION_CREDENTIALS"
+    ):  # noqa
         pass
     else:
         logger.error("ENV var: annabel toy doesn't exit. Process will stop")
