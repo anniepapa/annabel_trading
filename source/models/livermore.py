@@ -1,5 +1,7 @@
 from decimal import Decimal
 
+from google.cloud import firestore
+
 from my_logger import logger
 from toolkits import decimalize
 from models import TradingAnalyzor
@@ -13,7 +15,8 @@ class LivermoreTradingRule(TradingAnalyzor):
     __slot__ = (
         "initial_position",
         "ratio_checkpoint",
-        "ratio_diff",
+        "ratio_diff_buy",
+        "ratio_diff_sell",
         "state",
         "prod_meta",
         "cashable",
@@ -26,7 +29,9 @@ class LivermoreTradingRule(TradingAnalyzor):
         )
         self.ratio_checkpoint = ratio_checkpoint
 
-        self.ratio_diff = 0
+        self.ratio_diff_buy = 0
+        self.ratio_diff_sell = 0
+
         self.state = None
         self.prod_meta = {
             **prod_meta,
@@ -36,7 +41,7 @@ class LivermoreTradingRule(TradingAnalyzor):
         self.cashable = 0
         self.capacity = 0
 
-    def analyze_trend(self):
+    def _get_ratio_diff_buy(self, last_price_in_euro):
         last_buy_price = abs(
             self.prod_meta["last_transaction_price"]["b"]["price_foreign"]
         )
@@ -49,20 +54,44 @@ class LivermoreTradingRule(TradingAnalyzor):
             last_buy_price / self.prod_meta["fx_rate"]
         )
 
-        last_price_in_euro = abs(self.prod_meta["last_price_in_euro"])
-
-        diff = last_price_in_euro - last_buy_price_in_last_fx_rate
-        self.ratio_diff = decimalize(diff / last_buy_in_base_currency)
+        diff_buy = last_price_in_euro - last_buy_price_in_last_fx_rate
 
         logger.info(
-            f"{self.ratio_diff} on diff: {diff}, from {last_price_in_euro} - "
-            f"{last_buy_price_in_last_fx_rate} / {last_buy_in_base_currency}"
+            f"diff buy: {diff_buy} between last price (euro): "
+            f"{last_price_in_euro} and the last buy price: "
+            f"{last_buy_price_in_last_fx_rate}."
         )
 
-        if self.ratio_diff >= self.ratio_checkpoint:
+        return decimalize(diff_buy / last_buy_in_base_currency)
+
+    def _get_ratio_diff_sell(self, last_price_in_euro):
+        db = firestore.Client(project="avian-volt-391821")
+        doc_price = db.collection(self.prod_meta["code"])
+        price_info = {}
+        for doc in doc_price.stream():
+            (price_info := doc.to_dict())
+            logger.info(f"highest price: {price_info}")
+
+        highest_price_today = decimalize(price_info.get("highest_euro") or 0)
+        diff_sell = last_price_in_euro - highest_price_today
+
+        logger.info(
+            f"diff sell: {diff_sell} between last price (euro): "
+            f"{last_price_in_euro} and the highest of today: "
+            f"{highest_price_today}."
+        )
+
+        return decimalize(diff_sell / highest_price_today)
+
+    def analyze_trend(self):
+        last_price_in_euro = abs(self.prod_meta["last_price_in_euro"])
+        self.ratio_diff_buy = self._get_ratio_diff_buy(last_price_in_euro)
+        self.ratio_diff_sell = self._get_ratio_diff_sell(last_price_in_euro)
+
+        if self.ratio_diff_buy >= self.ratio_checkpoint:
             self.state = 1
 
-        elif self.ratio_diff <= -self.ratio_checkpoint + Decimal("0.01"):
+        elif self.ratio_diff_sell <= -self.ratio_checkpoint + Decimal("0.01"):
             self.state = -1
 
         else:
@@ -77,24 +106,24 @@ class LivermoreTradingRule(TradingAnalyzor):
         if self.state == 1:
             logger.info(
                 f"💹 Livermore: The last price of {self.prod_meta['name']} "
-                f"has 🚀: {self.ratio_diff*100}% up against the checkpoint: "
-                f"{checkpoint_up}%. Time to buy 20% more. "
+                f"has 🚀: {self.ratio_diff_buy*100}% up against the "
+                f"checkpoint: {checkpoint_up}%. Time to buy 20% more. "
                 f"Max to add: {self.capacity} base on 20% cashable position."
             )
 
         elif self.state == -1:
             logger.info(
                 f"🈹 Livermore: The last price of {self.prod_meta['name']} "
-                f"has 💥: {self.ratio_diff*100}% down against the "
+                f"has 💥: {self.ratio_diff_sell*100}% down against the "
                 f"checkpoint: {checkpoint_down}%. Time to sell all."
             )
 
         else:
             logger.info(
                 f"🧭 Livermore: Price change of {self.prod_meta['name']}: "
-                f"{self.ratio_diff*100}% against the checkpoint: "
-                f"{checkpoint_down}% ~ {checkpoint_up}%. "
-                f"No pivot point, hold it for now."
+                f"{self.ratio_diff_sell*100}% ~ {self.ratio_diff_buy*100}% "
+                f"against the checkpoint: {checkpoint_down}% ~ "
+                f"{checkpoint_up}%. No pivot point, hold it for now."
             )
 
     # @TODO @WIP

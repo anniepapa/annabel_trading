@@ -2,6 +2,7 @@ import sys
 from datetime import datetime, timedelta
 from decimal import Decimal
 
+from google.cloud import firestore
 import degiro_connector.core.helpers.pb_handler as payload_handler
 from degiro_connector.trading.models.trading_pb2 import (  # noqa
     ProductSearch,
@@ -92,6 +93,8 @@ class TradingOperator:
         return prod_meta
 
     def check_hold_status(self):
+        self._store_the_last_price()
+
         if not self.prod_meta["hold_qty"]:
             sold_hist = self.__get_last_records("transaction", buysell="S")[0]
             sold_price = decimalize(sold_hist["price"])
@@ -234,6 +237,34 @@ class TradingOperator:
         )
 
         return products["data"].values()
+
+    def _store_the_last_price(self):
+        db = firestore.Client(project="avian-volt-391821")
+        doc_price = db.collection(self.prod_meta["code"])
+        price_info = {}
+        for doc in doc_price.stream():
+            (price_info := doc.to_dict())
+            logger.info(f"{doc.id}'s highest price: {price_info}")
+
+        highest_price_today = decimalize(
+            price_info.get("highest_foreign") or 0
+        )
+
+        if self.prod_meta["last_price"] > highest_price_today:
+            doc_price.document("price").set(
+                {
+                    "date": str(datetime.now()),
+                    "highest_foreign": str(abs(self.prod_meta["last_price"])),
+                    "highest_euro": str(
+                        abs(self.prod_meta["last_price_in_euro"])
+                    ),
+                }
+            )
+            logger.info(
+                f"{self.prod_meta['name']} got a higher price! "
+                f"foreign: {self.prod_meta['last_price']}, "
+                f"euro: {self.prod_meta['last_price_in_euro']}"
+            )
 
     def _get_fx_rate(self, stock_currency):
         fx_code = "EUR" + stock_currency
