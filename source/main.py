@@ -82,7 +82,7 @@ def main(stock_name, code, ratio_checkpoint="0.1"):
         )
         logger.info(f"👉👉 Meta after livermore: {trading_operator.prod_meta}")
 
-        livermore.act_on_capacity(trading_operator)
+        # livermore.act_on_capacity(trading_operator)
 
 
 if __name__ == "__main__":

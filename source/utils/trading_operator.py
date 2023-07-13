@@ -30,6 +30,7 @@ class TradingOperator:
         "prod_meta",
         "updates",
         "portfolio",
+        "doc_price",
     )
 
     def __init__(self, keyword, code, trading_api=None):
@@ -47,6 +48,7 @@ class TradingOperator:
         self.prod_meta = self.initiate_prod_meta_from_str()
         self.updates = self._get_pending_order()
         self.portfolio = None
+        self.doc_price = None
 
         self.prod_meta.update(
             {
@@ -93,9 +95,11 @@ class TradingOperator:
         return prod_meta
 
     def check_hold_status(self):
-        self._store_the_last_price()
+        db = firestore.Client(project="avian-volt-391821")
+        self.doc_price = db.collection(self.prod_meta["code"])
 
         if not self.prod_meta["hold_qty"]:
+            self._store_the_last_price()
             sold_hist = self.__get_last_records("transaction", buysell="S")[0]
             sold_price = decimalize(sold_hist["price"])
             last_price = self.prod_meta["last_price"]
@@ -112,6 +116,8 @@ class TradingOperator:
                 f"🎈🎈 Annabel will exit. "
             )
             raise SystemExit
+        else:
+            self._store_the_highest_price()
 
     def check_pending_order(self):
         for order in self.updates["orders"]["values"]:
@@ -239,10 +245,25 @@ class TradingOperator:
         return products["data"].values()
 
     def _store_the_last_price(self):
-        db = firestore.Client(project="avian-volt-391821")
-        doc_price = db.collection(self.prod_meta["code"])
+        logger.info(
+            "🎨 You don't hold this stock, the last highest price "
+            "equals the last price"
+        )
+        self.doc_price.document("price").set(
+            {
+                "date": str(datetime.now()),
+                "highest_foreign": str(abs(self.prod_meta["last_price"])),
+                "highest_euro": str(abs(self.prod_meta["last_price_in_euro"])),
+            }
+        )
+
+    def _store_the_highest_price(self):
+        logger.info(
+            "🎨 You hold this stock, the last highest price and last "
+            "price will be compared."
+        )
         price_info = {}
-        for doc in doc_price.stream():
+        for doc in self.doc_price.stream():
             (price_info := doc.to_dict())
             logger.info(f"{doc.id}'s highest price: {price_info}")
 
@@ -251,7 +272,7 @@ class TradingOperator:
         )
 
         if self.prod_meta["last_price"] > highest_price_today:
-            doc_price.document("price").set(
+            self.doc_price.document("price").set(
                 {
                     "date": str(datetime.now()),
                     "highest_foreign": str(abs(self.prod_meta["last_price"])),
