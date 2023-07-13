@@ -267,9 +267,12 @@ class TradingOperator:
             )
 
     def _get_fx_rate(self, stock_currency):
-        fx_code = "EUR" + stock_currency
-        fx_rates = self.account_info["currencyPairs"]
-        return decimalize(fx_rates[fx_code]["price"])
+        if stock_currency.lower() == "eur":
+            return decimalize("1.0")
+        else:
+            fx_code = "EUR" + stock_currency
+            fx_rates = self.account_info["currencyPairs"]
+            return decimalize(fx_rates[fx_code]["price"])
 
     def _get_config(self):
         config_table = self.trading_api.get_config()
