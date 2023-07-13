@@ -309,6 +309,15 @@ class TradingOperator:
     def _get_last_transaction_price(self):
         self.product_id = self.prod_meta["id"]
         last_trans_details = self.__get_last_records("transaction")[0]
+
+        if self.prod_meta["stock_currency"].lower() == "eur":
+            price_in_base_currency = Decimal(last_trans_details["price"])
+        else:
+            price_in_base_currency = decimalize(
+                Decimal(last_trans_details["price"])
+                / Decimal(last_trans_details["nettFxRate"] or 1)
+            )
+
         last_transaction = {
             last_trans_details["buysell"].lower(): {
                 "transaction_datetime": last_trans_details["date"],
@@ -316,10 +325,7 @@ class TradingOperator:
                 "last_buy_fx_rate": decimalize(
                     last_trans_details["nettFxRate"]
                 ),
-                "price_in_base_currency": decimalize(
-                    Decimal(last_trans_details["price"])
-                    / Decimal(last_trans_details["nettFxRate"])
-                ),
+                "price_in_base_currency": price_in_base_currency,
                 "quantity": decimalize(last_trans_details["quantity"]),
                 "trans_fee_in_euro": decimalize(
                     last_trans_details["feeInBaseCurrency"]
