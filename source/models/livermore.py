@@ -76,9 +76,9 @@ class LivermoreTradingRule(TradingAnalyzor):
         diff_sell = last_price_in_euro - highest_price_today
 
         logger.info(
-            f"diff sell: {diff_sell} between last price (euro): "
-            f"{last_price_in_euro} and the highest of today: "
-            f"{highest_price_today}."
+            f"diff sell: {diff_sell} between last price (foreign): "
+            f"{self.prod_meta['last_price']} and the highest of today: "
+            f"{price_info.get('highest_foreign') or 0}."
         )
 
         return decimalize(diff_sell / highest_price_today)
