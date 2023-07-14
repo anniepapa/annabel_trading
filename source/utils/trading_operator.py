@@ -112,12 +112,15 @@ class TradingOperator:
                 f"The last price you sold: {sold_price}. "
                 f"Annabel finds the last price of today: "
                 f"{last_price}. The diff since last "
-                f"sold: {ratio*100}% on {sold_hist['date']} \n"
-                f"🎈🎈 Annabel will exit. "
+                f"sold: {ratio*100}% on {sold_hist['date']}."
             )
+
+            if not self.check_pending_order():
+                self._self_order()
+
             raise SystemExit
-        else:
-            self._store_the_highest_price()
+
+        self._store_the_highest_price()
 
     def check_pending_order(self):
         for order in self.updates["orders"]["values"]:
@@ -127,6 +130,25 @@ class TradingOperator:
                     f"🎈🎈Annabel will do nothing and exit."
                 )
                 raise SystemExit
+        else:
+            return False
+
+    def _self_order(self):
+        minor_position = Decimal("0.15") * self.prod_meta["last_balance"]
+        last_price = self.prod_meta["last_price_in_euro"]
+        if minor_position > last_price:
+            logger.info(
+                f"Zero hold, no pending order. We will purchase 1 stock "
+                f"using the last price (euro): {last_price}"
+            )
+            self.prod_meta["capacity"] = 1
+            self.order(action_type="B")
+        else:
+            logger.warning(
+                f"Zero hold, no pending order, also insufficient "
+                f"20% cashable: {minor_position} to buy 1 {last_price}. \n"
+                f"🎈🎈 Annabel will do nothing and exit."
+            )
 
     def order(self, action_type):
         """stop limit BUY:  # noqa
