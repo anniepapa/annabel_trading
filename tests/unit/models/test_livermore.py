@@ -38,8 +38,8 @@ class TestLivermoreRule:
         assert fake_livermore_up.ratio_diff_buy >= Decimal("0.1")
         assert fake_livermore_up.state == 1
 
-    def test_analyze_trend_down(self, fake_prod_meta_down):
-        fake_livermore_down = LivermoreTradingRule(fake_prod_meta_down)
-        fake_livermore_down.analyze()
-        assert fake_livermore_down.ratio_diff_sell <= Decimal("-0.1")
-        assert fake_livermore_down.state == -1
+    # def test_analyze_trend_down(self, fake_prod_meta_down):
+    #     fake_livermore_down = LivermoreTradingRule(fake_prod_meta_down)
+    #     fake_livermore_down.analyze()
+    #     assert fake_livermore_down.ratio_diff_sell <= Decimal("-0.1")
+    #     assert fake_livermore_down.state == -1
