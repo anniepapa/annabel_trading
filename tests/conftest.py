@@ -268,7 +268,7 @@ def fake_prod_meta():
                 "total_plus_all_fees_in_euro": Decimal("-8.6776"),
             }
         },
-        "last_price": Decimal("42.7701"),
+        "last_price": Decimal("43.7701"),
         "response_datetime": "2023-06-30T17:20:27",
         "cashable": Decimal("133.6857"),
         "last_price_in_euro": Decimal("3.6227"),
