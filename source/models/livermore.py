@@ -159,13 +159,14 @@ class LivermoreTradingRule(TradingAnalyzor):
         percent = decimalize(net / earns)
 
         logger.info(
-            f"Gross: {earns}, needs to pay: {fees}. Net: {net}. "
+            f"Earns: {earns}, needs to pay: {fees}. Net: {net}. "
             f"Percent: {percent*100}%... {self.ratio_diff_sell} "
             f"ratio sell: {self.ratio_diff_sell*100}%"
         )
 
         if (
             self.ratio_diff_sell < 0
+            and net >= 0
             and abs(self.ratio_diff_sell) >= 0.0028
             and percent > 0.28
         ):
