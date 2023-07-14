@@ -160,10 +160,15 @@ class LivermoreTradingRule(TradingAnalyzor):
 
         logger.info(
             f"Gross: {earns}, needs to pay: {fees}. Net: {net}. "
-            f"Percent: {percent*100}%"
+            f"Percent: {percent*100}%... {self.ratio_diff_sell} "
+            f"ratio sell: {self.ratio_diff_sell*100}%"
         )
 
-        if self.ratio_diff_sell < 0 and percent > 0.28:
+        if (
+            self.ratio_diff_sell < 0
+            and abs(self.ratio_diff_sell) >= 0.0028
+            and percent > 0.28
+        ):
             logger.info(
                 f"🎃 It's down with ratio diff sell: {self.ratio_diff_sell} "
                 f"but earned: {net} > 30%. Sell it to earn some."
