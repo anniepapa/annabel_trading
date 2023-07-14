@@ -161,7 +161,7 @@ class LivermoreTradingRule(TradingAnalyzor):
         logger.info(f"{percent, net, earns}")
 
         logger.info(
-            f"Earns: {earns}, needs to pay: {fees*2}. Net: {net}. "
+            f"✍✍ Earning: {earns}, needs to pay: {fees*2}. Net: {net}. "
             f"earn percent: {net/abs(net)*percent*100}%... "
             f"{self.ratio_diff_sell} ratio sell: {self.ratio_diff_sell*100}%"
         )
