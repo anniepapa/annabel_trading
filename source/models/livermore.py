@@ -155,18 +155,18 @@ class LivermoreTradingRule(TradingAnalyzor):
 
         earns = (last_price_in_euro - last_buy_price_in_euro) * qty
         fees = decimalize(trans_fee + autofx_fee)
-        net = decimalize(earns - fees)
-        percent = decimalize(net / earns)
+        net = decimalize(earns - fees * 2)
+        percent = decimalize(net / earns) * (net / abs(net))
 
         logger.info(
-            f"Earns: {earns}, needs to pay: {fees}. Net: {net}. "
-            f"Percent: {percent*100}%... {self.ratio_diff_sell} "
+            f"Earns: {earns}, needs to pay: {fees*2}. Net: {net}. "
+            f"Percent: {net/abs(net)}{percent*100}%... {self.ratio_diff_sell} "
             f"ratio sell: {self.ratio_diff_sell*100}%"
         )
 
         if (
             self.ratio_diff_sell < 0
-            and net >= 0
+            and net > 0
             and abs(self.ratio_diff_sell) >= 0.0028
             and percent > 0.28
         ):
