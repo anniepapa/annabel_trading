@@ -8,7 +8,7 @@ license = "GNU"
 [tool.poetry.dependencies]
 python = "^3.9"
 degiro-connector = "^2.0.23"
-cryptography = "^41.0.1"
+cryptography = "^41.0.2"
 protobuf = "^4.23.3"
 fire = "^0.5.0"
 APScheduler = "^3.10.1"
