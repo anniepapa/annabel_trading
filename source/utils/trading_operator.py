@@ -27,6 +27,7 @@ class TradingOperator:
         # "client_details",
         "account_info",
         "product_id",
+        "prod",
         "prod_meta",
         "updates",
         "portfolio",
@@ -45,6 +46,7 @@ class TradingOperator:
         # self.client_details = self._get_client_details()
         self.account_info = self._get_account_info()
         self.product_id = None
+        self.prod = None
         self.prod_meta = self.initiate_prod_meta_from_str()
         self.updates = self._get_pending_order()
         self.portfolio = None
@@ -79,6 +81,7 @@ class TradingOperator:
                 logger.info(
                     f"Product matches {self.keyword} and {self.code}: {prod}"
                 )
+                self.prod = prod
                 prod_meta = {
                     "name": prod["name"],
                     "id": str(prod["id"]),
@@ -125,13 +128,38 @@ class TradingOperator:
     def check_pending_order(self):
         for order in self.updates["orders"]["values"]:
             if str(order["product_id"]) == self.prod_meta["id"]:
-                logger.info(
-                    f"{order['product']} has a pending order: {order}. \n"
-                    f"🎈🎈Annabel will do nothing and exit."
-                )
-                raise SystemExit
+                logger.info(f"{order['product']} has a pending order: {order}")
+                self._check_pending_price(self, order)
+                return True
         else:
             return False
+
+    def _check_pending_price(self, order):
+        if order["action"]:  # Sell
+            # TODO
+            pass
+            # if self.prod_meta["last_price"] < Decimal(order["stop_price"]):
+
+            # else:
+            #     logger.warning(
+            #         f"last price: {self.prod_meta['last_price']} is higher "
+            #         f"than your trigger price: {order['stop_price']}")
+
+        else:  # Buy
+            if self.prod_meta["last_price"] < Decimal(order["stop_price"]):
+                logger.info(
+                    f"🕵️‍♀️ last price: {self.prod_meta['last_price']} is "
+                    f"lower than the trigger price: {order['stop_price']} "
+                    f"of pending BUY order. Existing order will be deleted. "
+                    f"A new order will be created with the last price."
+                )
+                self.trading_api.delete_order(order_id=order["id"])
+                self.order(action_type="B")
+            else:
+                logger.warning(
+                    f"last price: {self.prod_meta['last_price']} is higher "
+                    f"than your trigger price: {order['stop_price']}"
+                )
 
     def _self_order(self):
         minor_position = Decimal("0.15") * self.prod_meta["last_balance"]
@@ -174,16 +202,21 @@ class TradingOperator:
         Args:
             action_type (str): _description_.
         """
+        if abs(self.prod_meta["last_price"]) >= 1:
+            stop_diff, price_diff = Decimal("0.01"), Decimal("0.02")
+        else:
+            stop_diff, price_diff = Decimal("0.001"), Decimal("0.002")
+
         if action_type == "B":
             action = Order.Action.BUY
-            stop_price = self.prod_meta["last_price"] + Decimal("0.01")
-            price = self.prod_meta["last_price"] + Decimal("0.02")
+            stop_price = self.prod_meta["last_price"] + stop_diff
+            price = self.prod_meta["last_price"] + price_diff
             size = self.prod_meta["capacity"]
 
         else:
             action = Order.Action.SELL
-            stop_price = self.prod_meta["last_price"] - Decimal("0.01")
-            price = self.prod_meta["last_price"] - Decimal("0.02")
+            stop_price = self.prod_meta["last_price"] - stop_diff
+            price = self.prod_meta["last_price"] - price_diff
             size = self.prod_meta["hold_qty"]
 
         logger.info(

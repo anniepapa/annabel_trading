@@ -1,6 +1,6 @@
 from my_logger import logger
 
-from degiro_connector.quotecast.models.quotecast_pb2 import Quotecast
+from degiro_connector.quotecast.models.quotecast_pb2 import Quotecast, Chart
 from degiro_connector.quotecast.models.quotecast_parser import QuotecastParser
 from degiro_connector.quotecast.api import API as QuotecastAPI
 
@@ -64,3 +64,25 @@ class FinancialProductConsumer:
         quotecast_api.connect()
         logger.info(f"Product consumer: {quotecast_api} is connected")
         return quotecast_api
+
+    def _get_chart(self, prod):
+        request = Chart.Request()
+        request.culture = "fr-FR"
+        request.period = Chart.Interval.P1D
+        request.requestid = "1"
+        request.resolution = Chart.Interval.P5Y
+        request.series.append(f"price:isin:{prod['isin']}")
+        request.tz = "Europe/Paris"
+        request.override["resolution"] = "P1D"
+        request.override["period"] = "P5Y"
+
+        # FETCH DATA
+        chart = self.quotecast_api.get_chart(
+            request=request,
+            raw=True,
+        )
+
+        chart = {**chart, **prod}
+
+        # DISPLAY
+        logger.info(chart)
