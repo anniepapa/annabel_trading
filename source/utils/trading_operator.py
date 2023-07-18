@@ -129,7 +129,7 @@ class TradingOperator:
         for order in self.updates["orders"]["values"]:
             if str(order["product_id"]) == self.prod_meta["id"]:
                 logger.info(f"{order['product']} has a pending order: {order}")
-                self._check_pending_price(self, order)
+                self._check_pending_price(order)
                 return True
         else:
             return False
