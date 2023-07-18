@@ -75,23 +75,20 @@ class LivermoreTradingRule(TradingAnalyzor):
             (price_info := doc.to_dict())
             logger.info(f"highest price: {price_info}")
 
-        # highest_price_today = decimalize(price_info.get("highest_euro") or 0)
-        # diff_sell = last_price_in_euro - highest_price_today
+        highest_foreign = decimalize(price_info.get("highest_foreign") or 0)
+        highest_euro = decimalize(price_info.get("highest_euro") or 0)
 
-        highest_price_today = decimalize(
-            price_info.get("highest_foreign") or 0
-        )
-        diff_sell = self.prod_meta["last_price"] - highest_price_today
+        diff_sell = self.prod_meta["last_price"] - highest_foreign
 
         logger.info(
             f"diff sell: {diff_sell} between last price (foreign): "
             f"{self.prod_meta['last_price']}(euro: {last_price_in_euro}) "
             f"and the highest of today (foreign): "
             f"{price_info.get('highest_foreign') or 0}"
-            f"(euro: {highest_price_today})."
+            f"(euro: {highest_euro})."
         )
 
-        return decimalize(diff_sell / highest_price_today)
+        return decimalize(diff_sell / highest_foreign)
 
     def analyze_trend(self):
         last_price_in_euro = abs(self.prod_meta["last_price_in_euro"])
@@ -102,7 +99,7 @@ class LivermoreTradingRule(TradingAnalyzor):
         if self.ratio_diff_buy >= self.ratio_checkpoint:
             self.state = 1
 
-        elif self.ratio_diff_sell <= -self.ratio_checkpoint + Decimal("0.01"):
+        elif self.ratio_diff_sell <= -self.ratio_checkpoint + Decimal("0.02"):
             self.state = -1
 
         else:
