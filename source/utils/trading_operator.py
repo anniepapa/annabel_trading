@@ -457,7 +457,7 @@ class TradingOperator:
         request_list = Update.RequestList()
         request_list.values.extend(
             [
-                Update.Request(option=Update.Option.ORDERS),
+                Update.Request(option=Update.Option.ORDERS, last_updated=0),
                 Update.Request(option=Update.Option.PORTFOLIO, last_updated=0),
                 Update.Request(
                     option=Update.Option.TOTALPORTFOLIO, last_updated=0
