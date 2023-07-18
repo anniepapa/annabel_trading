@@ -99,7 +99,7 @@ class LivermoreTradingRule(TradingAnalyzor):
         if self.ratio_diff_buy >= self.ratio_checkpoint:
             self.state = 1
 
-        elif self.ratio_diff_sell <= -self.ratio_checkpoint + Decimal("0.01"):
+        elif self.ratio_diff_sell <= -self.ratio_checkpoint + Decimal("0.02"):
             self.state = -1
 
         else:

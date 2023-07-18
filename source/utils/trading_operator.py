@@ -126,12 +126,35 @@ class TradingOperator:
         self._store_the_highest_price()
 
     def check_pending_order(self):
+        pending_order = {}
+        for doc in self.doc_price.stream():
+            if str(doc.id) == "0":
+                (pending_order := doc.to_dict())
+                logger.info(f"{doc.id}'s pending order: {pending_order}")
+
+        pending = pending_order.get("pending")
+
         for order in self.updates["orders"]["values"]:
             if str(order["product_id"]) == self.prod_meta["id"]:
                 logger.info(f"{order['product']} has a pending order: {order}")
                 self._check_pending_price(order)
+
+                self.doc_price.document(int(order["action"])).set(
+                    {
+                        "pending": 0,
+                    }
+                )
+
                 return True
+
         else:
+            if pending:
+                logger.warning(
+                    "No order found but a pending state in firestore. "
+                    "A confirmed order is not online yet"
+                )
+                raise SystemExit
+
             return False
 
     def _check_pending_price(self, order):
@@ -154,6 +177,7 @@ class TradingOperator:
                     f"A new order will be created with the last price."
                 )
                 self.trading_api.delete_order(order_id=order["id"])
+                self.prod_meta["capacity"] = 1
                 self.order(action_type="B")
             else:
                 logger.warning(
@@ -207,17 +231,19 @@ class TradingOperator:
         else:
             stop_diff, price_diff = Decimal("0.001"), Decimal("0.002")
 
-        if action_type == "B":
-            action = Order.Action.BUY
-            stop_price = self.prod_meta["last_price"] + stop_diff
-            price = self.prod_meta["last_price"] + price_diff
-            size = self.prod_meta["capacity"]
+        action_code = 0 if action_type == "B" else 1
 
-        else:
+        if action_code:
             action = Order.Action.SELL
             stop_price = self.prod_meta["last_price"] - stop_diff
             price = self.prod_meta["last_price"] - price_diff
             size = self.prod_meta["hold_qty"]
+
+        else:
+            action = Order.Action.BUY
+            stop_price = self.prod_meta["last_price"] + stop_diff
+            price = self.prod_meta["last_price"] + price_diff
+            size = self.prod_meta["capacity"]
 
         logger.info(
             f"🤖 Annabel is ordering: {action_type} for {size}: "
@@ -255,6 +281,13 @@ class TradingOperator:
                 if confirmation_response
                 else logger.error("order not confirmed")
             )
+
+            if self.order_confirmed:
+                self.doc_price.document(action_code).set(
+                    {
+                        "pending": 1,
+                    }
+                )
 
         else:
             logger.critical("failed ordering")
@@ -424,7 +457,7 @@ class TradingOperator:
         request_list = Update.RequestList()
         request_list.values.extend(
             [
-                Update.Request(option=Update.Option.ORDERS, last_updated=0),
+                Update.Request(option=Update.Option.ORDERS),
                 Update.Request(option=Update.Option.PORTFOLIO, last_updated=0),
                 Update.Request(
                     option=Update.Option.TOTALPORTFOLIO, last_updated=0
