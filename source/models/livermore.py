@@ -21,6 +21,8 @@ class LivermoreTradingRule(TradingAnalyzor):
         "prod_meta",
         "cashable",
         "capacity",
+        "checkpoint_up",
+        "checkpoint_down",
     )
 
     def __init__(self, prod_meta, ratio_checkpoint=Decimal("0.1")) -> None:
@@ -41,20 +43,18 @@ class LivermoreTradingRule(TradingAnalyzor):
         self.cashable = 0
         self.capacity = 0
 
+        self.checkpoint_up = None
+        self.checkpoint_down = None
+
     def _get_ratio_diff_buy(self, last_price_in_euro):
         last_buy_price = abs(
             self.prod_meta["last_transaction_price"]["b"]["price_foreign"]
         )
-        # last_buy_in_base_currency = abs(
-        #     self.prod_meta["last_transaction_price"]["b"][
-        #         "price_in_base_currency"
-        #     ]
-        # )
+
         last_buy_price_in_last_fx_rate = decimalize(
             last_buy_price / self.prod_meta["fx_rate"]
         )
 
-        # diff_buy = last_price_in_euro - last_buy_price_in_last_fx_rate
         diff_buy = self.prod_meta["last_price"] - last_buy_price
 
         logger.info(
@@ -64,7 +64,6 @@ class LivermoreTradingRule(TradingAnalyzor):
             f"(euro: {last_buy_price_in_last_fx_rate})"
         )
 
-        # return decimalize(diff_buy / last_buy_in_base_currency)
         return decimalize(diff_buy / last_buy_price)
 
     def _get_ratio_diff_sell(self, last_price_in_euro):
@@ -91,24 +90,24 @@ class LivermoreTradingRule(TradingAnalyzor):
         return decimalize(diff_sell / highest_foreign)
 
     def analyze_trend(self):
+        self.checkpoint_up = self.ratio_checkpoint - Decimal("0.02")
+        self.checkpoint_down = -self.ratio_checkpoint + Decimal("0.015")
+
         last_price_in_euro = abs(self.prod_meta["last_price_in_euro"])
 
         self.ratio_diff_buy = self._get_ratio_diff_buy(last_price_in_euro)
         self.ratio_diff_sell = self._get_ratio_diff_sell(last_price_in_euro)
 
-        if self.ratio_diff_buy >= self.ratio_checkpoint:
+        if self.ratio_diff_buy >= self.checkpoint_up:
             self.state = 1
 
-        elif self.ratio_diff_sell <= -self.ratio_checkpoint + Decimal("0.02"):
+        elif self.ratio_diff_sell <= self.checkpoint_down:
             self.state = -1
 
         else:
             None
 
     def analyze(self):
-        checkpoint_up = self.ratio_checkpoint * 100
-        checkpoint_down = (-self.ratio_checkpoint + Decimal("0.01")) * 100
-
         self.analyze_capacity(self.prod_meta)
         self.analyze_trend()
 
@@ -116,7 +115,7 @@ class LivermoreTradingRule(TradingAnalyzor):
             logger.info(
                 f"💹 Livermore: The last price of {self.prod_meta['name']} "
                 f"has 🚀: {self.ratio_diff_buy*100}% up against the "
-                f"checkpoint: {checkpoint_up}%. Time to buy 20% more. "
+                f"checkpoint: {self.checkpoint_up*100}%. Time to buy 20% more. "  # noqa
                 f"Max to add: {self.capacity} base on 20% cashable position."
             )
 
@@ -124,15 +123,15 @@ class LivermoreTradingRule(TradingAnalyzor):
             logger.info(
                 f"🈹 Livermore: The last price of {self.prod_meta['name']} "
                 f"has 💥: {self.ratio_diff_sell*100}% down against the "
-                f"checkpoint: {checkpoint_down}%. Time to sell all."
+                f"checkpoint: {self.checkpoint_down*100}%. Time to sell all."
             )
 
         else:
             logger.info(
                 f"🧭 Livermore: Price change of {self.prod_meta['name']}: "
                 f"{self.ratio_diff_sell*100}% ~ {self.ratio_diff_buy*100}% "
-                f"against the checkpoint: {checkpoint_down}% ~ "
-                f"{checkpoint_up}%. No pivot point, hold it for now."
+                f"against the checkpoint: {self.checkpoint_down*100}% ~ "
+                f"{self.checkpoint_up*100}%. No pivot point, hold it for now."
             )
 
     def review_decision(self, meta):
@@ -153,25 +152,28 @@ class LivermoreTradingRule(TradingAnalyzor):
         earns = (last_price_in_euro - last_buy_price_in_euro) * qty
         fees = decimalize(trans_fee + autofx_fee)
         net = decimalize(earns - fees * 2)
-        percent = decimalize(net / earns) * (net / abs(net))
+        percent = earns / last_price_in_euro
 
         logger.info(
             f"✍✍ Earning: {earns}, needs to pay: {fees*2}. Net: {net}. "
-            f"earn percent: {percent*100}%... "
-            f"{self.ratio_diff_sell} ratio sell: {self.ratio_diff_sell*100}%"
+            f"{net} / last price in euro: {last_price_in_euro} ==> {percent}"
         )
 
-        if (
-            self.ratio_diff_sell < 0
-            and net > 0
-            and abs(self.ratio_diff_sell) >= 0.0028
-            and percent > 0.28
-        ):
+        if self.ratio_diff_sell < 0 and net > 0:
             logger.info(
                 f"🎃 It's down with ratio diff sell: {self.ratio_diff_sell} "
-                f"but earned: {net} > 30%. Sell it to earn some."
+                f"but earned: {net}. Sell it to earn some."
             )
             self.state = -1
+
+        elif self.state == 1 and net <= 0:
+            logger.info(
+                f"🎃 It's up with ratio diff sell: {self.ratio_diff_sell} "
+                f"but earned: {net} < {fees} to pay. Hold it before a new buy"
+            )
+
+        else:
+            pass
 
     # @TODO @WIP
     def act_on_capacity(self, trading_operator):
