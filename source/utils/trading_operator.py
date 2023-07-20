@@ -128,7 +128,7 @@ class TradingOperator:
     def check_pending_order(self):
         pending_order = {}
         for doc in self.doc_price.stream():
-            if str(doc.id) == "0":
+            if str(doc.id) == "order_0":
                 (pending_order := doc.to_dict())
                 logger.info(f"{doc.id}'s pending order: {pending_order}")
 
@@ -139,8 +139,9 @@ class TradingOperator:
                 logger.info(f"{order['product']} has a pending order: {order}")
                 self._check_pending_price(order)
 
-                self.doc_price.document(int(order["action"])).set(
+                self.doc_price.document("order_" + str(order["action"])).set(
                     {
+                        "date": str(datetime.now()),
                         "pending": 0,
                     }
                 )
@@ -283,8 +284,9 @@ class TradingOperator:
             )
 
             if self.order_confirmed:
-                self.doc_price.document(action_code).set(
+                self.doc_price.document("order_" + str(action_code)).set(
                     {
+                        "date": str(datetime.now()),
                         "pending": 1,
                     }
                 )
