@@ -134,7 +134,8 @@ class TradingOperator:
                 and str(order["action"]) == "0"
             ):
                 logger.info(
-                    f"{order['product']} has a pending order buy: {order}"
+                    f"{order['product']} has a pending (manually created "
+                    f"if pending buy status is 0) order buy: {order}"
                 )
                 self._check_pending_price(order)
 
@@ -162,10 +163,12 @@ class TradingOperator:
     def _get_pending_status_firestore(self, type_of_order):
         pending = {}
         code = "sell" if type_of_order else "buy"
+
         for doc in self.doc_price.stream():
             if str(doc.id) == f"order_{type_of_order}":
                 (pending := doc.to_dict())
                 logger.info(f"{doc.id}'s pending {code}: {pending}")
+                break
 
         return pending.get("pending")
 
@@ -180,6 +183,12 @@ class TradingOperator:
                 f"A new order will be created with the last price."
             )
             self.trading_api.delete_order(order_id=order["id"])
+            self.doc_price.document("order_0").set(
+                {
+                    "date": str(datetime.now()),
+                    "pending": 0,
+                }
+            )
 
             # automated buy may cause loss due to expensive fee, disabled for now.  # noqa
 
@@ -360,7 +369,10 @@ class TradingOperator:
         price_info = {}
         for doc in self.doc_price.stream():
             (price_info := doc.to_dict())
-            logger.info(f"{doc.id}'s highest price: {price_info}")
+            if price_info.get("highest_foreign"):
+                self.prod_meta["highest_price_info"] = price_info
+                logger.info(f"{doc.id}'s highest price: {price_info}")
+                break
 
         highest_price_today = decimalize(
             price_info.get("highest_foreign") or 0
