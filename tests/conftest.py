@@ -272,6 +272,11 @@ def fake_prod_meta():
         "response_datetime": "2023-06-30T17:20:27",
         "cashable": Decimal("133.6857"),
         "last_price_in_euro": Decimal("3.6227"),
+        "highest_price_info": {
+            "date": "2023-07-20 19:09:19.771",
+            "highest_euro": "23.3105",
+            "highest_foreign": "26.1100",
+        },
     }
 
 

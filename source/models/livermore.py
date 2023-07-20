@@ -1,7 +1,5 @@
 from decimal import Decimal
 
-from google.cloud import firestore
-
 from my_logger import logger
 from toolkits import decimalize
 from models import TradingAnalyzor
@@ -34,7 +32,7 @@ class LivermoreTradingRule(TradingAnalyzor):
         self.ratio_diff_buy = 0
         self.ratio_diff_sell = 0
 
-        self.state = None
+        self.state = 0
         self.prod_meta = {
             **prod_meta,
             **{"last_balance": self.initial_position},
@@ -67,12 +65,7 @@ class LivermoreTradingRule(TradingAnalyzor):
         return decimalize(diff_buy / last_buy_price)
 
     def _get_ratio_diff_sell(self, last_price_in_euro):
-        db = firestore.Client(project="avian-volt-391821")
-        doc_price = db.collection(self.prod_meta["code"])
-        price_info = {}
-        for doc in doc_price.stream():
-            (price_info := doc.to_dict())
-            logger.info(f"highest price: {price_info}")
+        price_info = self.prod_meta["highest_price_info"]
 
         highest_foreign = decimalize(price_info.get("highest_foreign") or 0)
         highest_euro = decimalize(price_info.get("highest_euro") or 0)
@@ -90,7 +83,7 @@ class LivermoreTradingRule(TradingAnalyzor):
         return decimalize(diff_sell / highest_foreign)
 
     def analyze_trend(self):
-        self.checkpoint_up = self.ratio_checkpoint - Decimal("0.015")
+        self.checkpoint_up = self.ratio_checkpoint - Decimal("0.017")
         self.checkpoint_down = -self.ratio_checkpoint + Decimal("0.01")
 
         last_price_in_euro = abs(self.prod_meta["last_price_in_euro"])
@@ -115,7 +108,7 @@ class LivermoreTradingRule(TradingAnalyzor):
             logger.info(
                 f"💹 Livermore: The last price of {self.prod_meta['name']} "
                 f"has 🚀: {self.ratio_diff_buy*100}% up against the "
-                f"checkpoint: {self.checkpoint_up*100}%. Time to buy 20% more. "  # noqa
+                f"up point: {self.checkpoint_up*100}%. Time to buy 20% more. "
                 f"Max to add: {self.capacity} base on 20% cashable position."
             )
 
@@ -123,7 +116,7 @@ class LivermoreTradingRule(TradingAnalyzor):
             logger.info(
                 f"🈹 Livermore: The last price of {self.prod_meta['name']} "
                 f"has 💥: {self.ratio_diff_sell*100}% down against the "
-                f"checkpoint: {self.checkpoint_down*100}%. Time to sell all."
+                f"down point: {self.checkpoint_down*100}%. Time to sell all."
             )
 
         else:
@@ -152,16 +145,14 @@ class LivermoreTradingRule(TradingAnalyzor):
         earns = (last_price_in_euro - last_buy_price_in_euro) * qty
         fees = decimalize(trans_fee + autofx_fee)
         net = decimalize(earns - fees * 2)
-        percent = earns / last_price_in_euro
 
         logger.info(
-            f"✍✍ Earning: {earns}, needs to pay: {fees*2}. Net: {net}. "
-            f"{net} / last price in euro: {last_price_in_euro} ==> {percent}"
+            f"✍✍ Earning: {earns}, needs to pay: {fees*2}. Net: {net}."
         )
 
         if self.state not in (1, -1) and self.prod_meta.get("sell_order"):
             logger.info(
-                "🧛‍♂️ Calm down, each sell costs money...livermore says "
+                "🧛‍♂️ Calm down, each SELL costs money...livermore says "
                 "hold it, the existing SELL order will be deleted."
             )
             self.trading_api.delete_order(
@@ -180,6 +171,7 @@ class LivermoreTradingRule(TradingAnalyzor):
                 f"🎃 It's up with ratio diff sell: {self.ratio_diff_sell} "
                 f"but earned: {net} < {fees} to pay. Hold it before a new buy"
             )
+            self.state = 0
 
         else:
             pass
