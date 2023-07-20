@@ -137,6 +137,9 @@ class TradingOperator:
         for order in self.updates["orders"]["values"]:
             if str(order["product_id"]) == self.prod_meta["id"]:
                 logger.info(f"{order['product']} has a pending order: {order}")
+
+                if order["action"]:
+                    self.prod_meta["sell_order"] = order
                 self._check_pending_price(order)
 
                 self.doc_price.document("order_" + str(order["action"])).set(
