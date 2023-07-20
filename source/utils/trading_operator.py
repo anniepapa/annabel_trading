@@ -97,7 +97,7 @@ class TradingOperator:
 
         return prod_meta
 
-    def check_hold_status(self):
+    def check_pending_order(self):
         db = firestore.Client(project="avian-volt-391821")
         self.doc_price = db.collection(self.prod_meta["code"])
 
@@ -118,76 +118,78 @@ class TradingOperator:
                 f"sold: {ratio*100}% on {sold_hist['date']}."
             )
 
-            if not self.check_pending_order():
-                self._self_order()
+            self._check_pending_buy()
 
-            raise SystemExit
+        else:
+            self._check_pending_buy()
+            self._check_pending_sell()
 
         self._store_the_highest_price()
 
-    def check_pending_order(self):
-        pending_order = {}
-        for doc in self.doc_price.stream():
-            if str(doc.id) == "order_0":
-                (pending_order := doc.to_dict())
-                logger.info(f"{doc.id}'s pending order: {pending_order}")
-
-        pending = pending_order.get("pending")
-
+    def _check_pending_buy(self):
+        pending_buy_status = self._get_pending_status_firestore(0)
         for order in self.updates["orders"]["values"]:
-            if str(order["product_id"]) == self.prod_meta["id"]:
-                logger.info(f"{order['product']} has a pending order: {order}")
-
-                if order["action"]:
-                    self.prod_meta["sell_order"] = order
+            if (
+                str(order["product_id"]) == self.prod_meta["id"]
+                and str(order["action"]) == "0"
+            ):
+                logger.info(
+                    f"{order['product']} has a pending order buy: {order}"
+                )
                 self._check_pending_price(order)
 
-                self.doc_price.document("order_" + str(order["action"])).set(
-                    {
-                        "date": str(datetime.now()),
-                        "pending": 0,
-                    }
-                )
-
-                return True
-
         else:
-            if pending:
+            if pending_buy_status:
                 logger.warning(
-                    "No order found but a pending state in firestore. "
-                    "A confirmed order is not online yet"
+                    "No pending buy but a pending state in firestore. "
+                    "Probably a confirmed buy is not online yet."
                 )
-                raise SystemExit
 
-            return False
+    def _check_pending_sell(self):
+        pending_sell_status = self._get_pending_status_firestore(1)
+        for order in self.updates["orders"]["values"]:
+            if (
+                str(order["product_id"]) == self.prod_meta["id"]
+                and order["action"]
+            ):  # noqa SELL
+                self.prod_meta["sell_order"] = order
+        else:
+            if pending_sell_status:
+                logger.warning(
+                    "No pending sell but a pending state in firestore. "
+                )
+
+    def _get_pending_status_firestore(self, type_of_order):
+        pending = {}
+        code = "sell" if type_of_order else "buy"
+        for doc in self.doc_price.stream():
+            if str(doc.id) == f"order_{type_of_order}":
+                (pending := doc.to_dict())
+                logger.info(f"{doc.id}'s pending {code}: {pending}")
+
+        return pending.get("pending")
 
     def _check_pending_price(self, order):
-        if order["action"]:  # Sell
-            # TODO
-            pass
-            # if self.prod_meta["last_price"] < Decimal(order["stop_price"]):
+        # Only when the order type is B
 
-            # else:
-            #     logger.warning(
-            #         f"last price: {self.prod_meta['last_price']} is higher "
-            #         f"than your trigger price: {order['stop_price']}")
+        if Decimal(order["stop_price"]) - self.prod_meta["last_price"] > 0.02:
+            logger.info(
+                f"🕵️‍♀️ last price: {self.prod_meta['last_price']} is "
+                f"lower than the trigger price: {order['stop_price']} "
+                f"of pending BUY order. Existing order will be deleted. "
+                f"A new order will be created with the last price."
+            )
+            self.trading_api.delete_order(order_id=order["id"])
 
-        else:  # Buy
-            if self.prod_meta["last_price"] < Decimal(order["stop_price"]):
-                logger.info(
-                    f"🕵️‍♀️ last price: {self.prod_meta['last_price']} is "
-                    f"lower than the trigger price: {order['stop_price']} "
-                    f"of pending BUY order. Existing order will be deleted. "
-                    f"A new order will be created with the last price."
-                )
-                self.trading_api.delete_order(order_id=order["id"])
-                self.prod_meta["capacity"] = 1
-                self.order(action_type="B")
-            else:
-                logger.warning(
-                    f"last price: {self.prod_meta['last_price']} is higher "
-                    f"than your trigger price: {order['stop_price']}"
-                )
+            # automated buy may cause loss due to expensive fee, disabled for now.  # noqa
+
+            # self.prod_meta["capacity"] = 1
+            # self.order(action_type="B")
+        else:
+            logger.warning(
+                f"last price: {self.prod_meta['last_price']} is higher not "
+                f"higher enough than your trigger price: {order['stop_price']}"
+            )
 
     def _self_order(self):
         minor_position = Decimal("0.15") * self.prod_meta["last_balance"]
