@@ -90,8 +90,8 @@ class LivermoreTradingRule(TradingAnalyzor):
         return decimalize(diff_sell / highest_foreign)
 
     def analyze_trend(self):
-        self.checkpoint_up = self.ratio_checkpoint - Decimal("0.02")
-        self.checkpoint_down = -self.ratio_checkpoint + Decimal("0.015")
+        self.checkpoint_up = self.ratio_checkpoint - Decimal("0.015")
+        self.checkpoint_down = -self.ratio_checkpoint + Decimal("0.01")
 
         last_price_in_euro = abs(self.prod_meta["last_price_in_euro"])
 
@@ -158,6 +158,15 @@ class LivermoreTradingRule(TradingAnalyzor):
             f"✍✍ Earning: {earns}, needs to pay: {fees*2}. Net: {net}. "
             f"{net} / last price in euro: {last_price_in_euro} ==> {percent}"
         )
+
+        if self.state not in (1, -1) and self.prod_meta.get("sell_order"):
+            logger.info(
+                "🧛‍♂️ Calm down, each sell costs money...livermore says "
+                "hold it, the existing SELL order will be deleted."
+            )
+            self.trading_api.delete_order(
+                order_id=self.prod_meta["sell_order"]["id"]
+            )
 
         if self.ratio_diff_sell < 0 and net > 0:
             logger.info(

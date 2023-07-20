@@ -57,8 +57,6 @@ def main(stock_name, code, ratio_checkpoint="0.1"):
         # prod_consumer._get_chart(trading_operator.prod)
 
         update_prod_meta(trading_operator, prod_consumer)
-
-        trading_operator.check_hold_status()
         trading_operator.check_pending_order()
 
         pre_analysis = TradingAnalyzor()
