@@ -138,6 +138,18 @@ class TradingOperator:
                     f"if pending buy status is 0) order buy: {order}"
                 )
                 self._check_pending_price(order)
+                self.doc_price.document("price").set(
+                    {
+                        "date": str(datetime.now()),
+                        "highest_foreign": str(
+                            abs(self.prod_meta["last_price"])
+                        ),
+                        "highest_euro": str(
+                            abs(self.prod_meta["last_price_in_euro"])
+                        ),
+                    }
+                )
+                break
 
         else:
             if pending_buy_status:
@@ -154,6 +166,8 @@ class TradingOperator:
                 and order["action"]
             ):  # noqa SELL
                 self.prod_meta["sell_order"] = order
+                break
+
         else:
             if pending_sell_status:
                 logger.warning(
