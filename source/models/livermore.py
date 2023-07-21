@@ -84,7 +84,7 @@ class LivermoreTradingRule(TradingAnalyzor):
 
     def analyze_trend(self):
         self.checkpoint_up = self.ratio_checkpoint - Decimal("0.017")
-        self.checkpoint_down = -self.ratio_checkpoint + Decimal("0.01")
+        self.checkpoint_down = -self.ratio_checkpoint
 
         last_price_in_euro = abs(self.prod_meta["last_price_in_euro"])
 
@@ -159,21 +159,33 @@ class LivermoreTradingRule(TradingAnalyzor):
                 order_id=self.prod_meta["sell_order"]["id"]
             )
 
-        if self.ratio_diff_sell < 0 and net > 0:
+        if (
+            self.ratio_diff_sell < 0 and net > 0
+        ):  # noqa TODO: count number of decrease in the same day to help decision making
             logger.info(
                 f"🎃 It's down with ratio diff sell: {self.ratio_diff_sell} "
                 f"but earned: {net}. Sell it to earn some."
             )
             self.state = -1
 
+        elif self.state == -1 and net <= 0:
+            logger.info(
+                "🧛‍♂️ Calm down, each SELL costs money...you are "
+                "earning nothing but lossing money"
+            )
+            self.trading_api.delete_order(
+                order_id=self.prod_meta["sell_order"]["id"]
+            )
+
         elif self.state == 1 and net <= 0:
             logger.info(
-                f"🎃 It's up with ratio diff sell: {self.ratio_diff_sell} "
+                f"🎃 It's up with ratio diff buy: {self.ratio_diff_buy} "
                 f"but earned: {net} < {fees} to pay. Hold it before a new buy"
             )
             self.state = 0
 
         else:
+            logger.info("Verify if any case missing for risk management.")
             pass
 
     # @TODO @WIP
