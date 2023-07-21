@@ -45,24 +45,24 @@ class LivermoreTradingRule(TradingAnalyzor):
         self.checkpoint_down = None
 
     def _get_ratio_diff_buy(self, last_price_in_euro):
-        last_buy_price = abs(
+        last_buy_foreign = abs(
             self.prod_meta["last_transaction_price"]["b"]["price_foreign"]
         )
-
-        last_buy_price_in_last_fx_rate = decimalize(
-            last_buy_price / self.prod_meta["fx_rate"]
+        last_buy_price_in_euro = abs(
+            self.prod_meta["last_transaction_price"]["b"][
+                "price_in_base_currency"
+            ]
         )
-
-        diff_buy = self.prod_meta["last_price"] - last_buy_price
+        diff_buy = decimalize(last_price_in_euro - last_buy_price_in_euro)
 
         logger.info(
-            f"diff buy: {diff_buy} between last price (foreign): "
+            f"diff buy euro: {diff_buy} between last price (foreign): "
             f"{self.prod_meta['last_price']}(euro: {last_price_in_euro}) "
-            f"and the last buy price (foreign): {last_buy_price}."
-            f"(euro: {last_buy_price_in_last_fx_rate})"
+            f"and the last buy price (foreign): {last_buy_foreign}."
+            f"(euro: {last_buy_price_in_euro})"
         )
 
-        return decimalize(diff_buy / last_buy_price)
+        return decimalize(diff_buy / last_buy_price_in_euro)
 
     def _get_ratio_diff_sell(self, last_price_in_euro):
         price_info = self.prod_meta["highest_price_info"]
@@ -70,17 +70,16 @@ class LivermoreTradingRule(TradingAnalyzor):
         highest_foreign = decimalize(price_info.get("highest_foreign") or 0)
         highest_euro = decimalize(price_info.get("highest_euro") or 0)
 
-        diff_sell = self.prod_meta["last_price"] - highest_foreign
+        diff_sell = self.prod_meta["last_price_in_euro"] - highest_euro
 
         logger.info(
-            f"diff sell: {diff_sell} between last price (foreign): "
+            f"diff sell euro: {diff_sell} between last price (foreign): "
             f"{self.prod_meta['last_price']}(euro: {last_price_in_euro}) "
             f"and the highest of today (foreign): "
-            f"{price_info.get('highest_foreign') or 0}"
-            f"(euro: {highest_euro})."
+            f"{highest_foreign}(euro: {highest_euro})."
         )
 
-        return decimalize(diff_sell / highest_foreign)
+        return decimalize(diff_sell / highest_euro)
 
     def analyze_trend(self):
         self.checkpoint_up = self.ratio_checkpoint - Decimal("0.017")
@@ -139,15 +138,21 @@ class LivermoreTradingRule(TradingAnalyzor):
         last_buy_price = abs(
             meta["last_transaction_price"]["b"]["price_foreign"]
         )
-        last_buy_price_in_euro = decimalize(last_buy_price / meta["fx_rate"])
+        last_buy_fx_rate = abs(
+            meta["last_transaction_price"]["b"]["last_buy_fx_rate"]
+        )
+
         last_price_in_euro = meta["last_price_in_euro"]
+        last_buy_price_in_euro = decimalize(last_buy_price / last_buy_fx_rate)
 
         earns = (last_price_in_euro - last_buy_price_in_euro) * qty
         fees = decimalize(trans_fee + autofx_fee)
         net = decimalize(earns - fees * 2)
 
         logger.info(
-            f"✍✍ Earning: {earns}, needs to pay: {fees*2}. Net: {net}."
+            f"✍✍ Earning: {earns}, needs to pay: {fees*2}. Net: {net}. "
+            f"(last price in euro: {last_price_in_euro} - last buy in euro: "
+            f"{last_buy_price_in_euro}) * {qty} = earn: {earns}"
         )
 
         if self.state not in (1, -1) and self.prod_meta.get("sell_order"):
@@ -159,14 +164,17 @@ class LivermoreTradingRule(TradingAnalyzor):
                 order_id=self.prod_meta["sell_order"]["id"]
             )
 
-        if (
-            self.ratio_diff_sell < 0 and net > 0
-        ):  # noqa TODO: count number of decrease in the same day to help decision making
-            logger.info(
-                f"🎃 It's down with ratio diff sell: {self.ratio_diff_sell} "
-                f"but earned: {net}. Sell it to earn some."
-            )
-            self.state = -1
+        # TODO: bug , cannot handle well if manual buy very low price in the middle of the day  # noqa
+        # False negative
+
+        # if (
+        #     self.ratio_diff_sell < 0 and net > 0
+        # ):  # noqa TODO: count number of decrease in the same day to help decision making
+        #     logger.info(
+        #         f"🎃 It's down with ratio diff sell: {self.ratio_diff_sell} "
+        #         f"but earned: {net}. Sell it to earn some."
+        #     )
+        #     self.state = -1
 
         elif self.state == -1 and net <= 0:
             logger.info(
