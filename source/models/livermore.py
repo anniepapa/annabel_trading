@@ -152,8 +152,8 @@ class LivermoreTradingRule(TradingAnalyzor):
 
         if self.state not in (1, -1) and self.prod_meta.get("sell_order"):
             logger.info(
-                "🧛‍♂️ Calm down, each SELL costs money...livermore says "
-                "hold it, the existing SELL order will be deleted."
+                "🧛‍♂️🧛‍♂️🧛‍♂️ Calm down, each SELL costs money...livermore "
+                "says hold it, the existing SELL order will be deleted."
             )
             self.trading_api.delete_order(
                 order_id=self.prod_meta["sell_order"]["id"]
@@ -170,23 +170,26 @@ class LivermoreTradingRule(TradingAnalyzor):
 
         elif self.state == -1 and net <= 0:
             logger.info(
-                "🧛‍♂️ Calm down, each SELL costs money...you are "
-                "earning nothing but lossing money"
+                "🧛‍♂️🧛‍♂️🧛‍♂️ Calm down, each SELL costs money...you are "
+                "earning nothing but only losing money"
             )
-            self.trading_api.delete_order(
-                order_id=self.prod_meta["sell_order"]["id"]
-            )
+
+            if self.prod_meta.get("sell_order"):
+                self.trading_api.delete_order(
+                    order_id=self.prod_meta["sell_order"]["id"]
+                )
+            self.state = 0
 
         elif self.state == 1 and net <= 0:
             logger.info(
-                f"🎃 It's up with ratio diff buy: {self.ratio_diff_buy} "
-                f"but earned: {net} < {fees} to pay. Hold it before a new buy"
+                f"🎃🧛‍♂️🧛‍♂️ It's up with ratio diff buy: "
+                f"{self.ratio_diff_buy} but earned: {net} < "
+                f"{fees} to pay. Hold it before a new buy"
             )
             self.state = 0
 
         else:
             logger.info("Verify if any case missing for risk management.")
-            pass
 
     # @TODO @WIP
     def act_on_capacity(self, trading_operator):
