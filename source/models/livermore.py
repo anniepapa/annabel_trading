@@ -75,7 +75,9 @@ class LivermoreTradingRule(TradingAnalyzor):
         highest_foreign = decimalize(price_info.get("highest_foreign") or 0)
         highest_euro = decimalize(price_info.get("highest_euro") or 0)
 
-        medium_check_point = (highest_euro + last_buy_price_in_euro) / 2
+        medium_check_point = (highest_euro + last_buy_price_in_euro) / Decimal(
+            "2.0"
+        )
 
         diff_sell = decimalize(last_price_in_euro - medium_check_point)
 
@@ -154,7 +156,9 @@ class LivermoreTradingRule(TradingAnalyzor):
         )
 
         last_price_in_euro = meta["last_price_in_euro"]
-        last_buy_price_in_euro = decimalize(last_buy_price / last_buy_fx_rate)
+        last_buy_price_in_euro = decimalize(
+            last_buy_price / (last_buy_fx_rate or 1)
+        )
 
         earns = (last_price_in_euro - last_buy_price_in_euro) * qty
         fees = decimalize(trans_fee + autofx_fee)

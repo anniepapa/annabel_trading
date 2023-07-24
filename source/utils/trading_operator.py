@@ -377,8 +377,7 @@ class TradingOperator:
 
     def _store_the_highest_price(self):
         logger.info(
-            "🎨 You hold this stock, the last highest price and last "
-            "price will be compared."
+            "🎨 The last highest price and last " "price will be compared."
         )
         price_info = {}
         for doc in self.doc_price.stream():
