@@ -133,7 +133,8 @@ class LivermoreTradingRule(TradingAnalyzor):
                 f"🧭 Livermore: Price change of {self.prod_meta['name']}: "
                 f"{self.ratio_diff_sell*100}% ~ {self.ratio_diff_buy*100}% "
                 f"against the checkpoint: {self.checkpoint_down*100}% ~ "
-                f"{self.checkpoint_up*100}%. No pivot point, hold it for now."
+                f"{self.checkpoint_up*100}%. No inflection point, "
+                f"hold it for now."
             )
 
     def review_decision(self, meta):
