@@ -2,7 +2,7 @@ import sys
 from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_DOWN
 
-from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_result
+from tenacity import retry, stop_after_attempt
 from google.cloud import firestore
 import degiro_connector.core.helpers.pb_handler as payload_handler
 from degiro_connector.trading.models.trading_pb2 import (  # noqa
@@ -15,6 +15,22 @@ from degiro_connector.trading.models.trading_pb2 import (  # noqa
 from utils import BaseRequestOnDate
 from my_logger import logger
 from toolkits import decimalize, get_last_valuta_balance
+
+
+def extract_retry_after(response):
+    retry_after_header = response.headers.get("Retry-After")
+    if retry_after_header is not None:
+        # Convert the "Retry-After" value to an integer (number of seconds)
+        try:
+            return int(retry_after_header)
+        except ValueError:
+            # If the value is not an integer, use a default wait time
+            pass
+    return 2  # Default wait time in seconds
+
+
+def custom_wait(retry_state):
+    return extract_retry_after(retry_state.outcome.result())
 
 
 class TradingOperator:
@@ -310,10 +326,11 @@ class TradingOperator:
             )
 
     @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_fixed(2),
-        retry=retry_if_result(lambda result: result.status_code == 429),
-    )  # noqa
+        stop=stop_after_attempt(2),
+        wait=custom_wait,
+        retry_error_callback=lambda retry_state: retry_state.outcome.exception().response.status_code  # noqa
+        == 429,
+    )
     def _send_order(self, order):
         # FETCH CHECKING_RESPONSE
         checking_response = self.trading_api.check_order(order=order)
