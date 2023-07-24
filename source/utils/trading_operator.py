@@ -1,7 +1,8 @@
 import sys
 from datetime import datetime, timedelta
-from decimal import Decimal
+from decimal import Decimal, ROUND_DOWN
 
+from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_result
 from google.cloud import firestore
 import degiro_connector.core.helpers.pb_handler as payload_handler
 from degiro_connector.trading.models.trading_pb2 import (  # noqa
@@ -283,13 +284,37 @@ class TradingOperator:
         order = Order(
             action=action,
             order_type=Order.OrderType.STOP_LIMIT,
-            stop_price=decimalize(stop_price, prec=".0001"),
-            price=decimalize(price, prec=".0001"),
+            stop_price=decimalize(stop_price, prec=".01", round=ROUND_DOWN),
+            price=decimalize(price, prec=".01", round=ROUND_DOWN),
             product_id=int(self.prod_meta["id"]),
             size=size,
             time_type=Order.TimeType.GOOD_TILL_DAY,
         )
 
+        confirmation_response = self._send_order(order)
+
+        logger.info(f"🏈 {confirmation_response}")
+
+        self.order_confirmed = (
+            True
+            if confirmation_response
+            else logger.error("order not confirmed")
+        )
+
+        if self.order_confirmed:
+            self.doc_price.document("order_" + str(action_code)).set(
+                {
+                    "date": str(datetime.now()),
+                    "pending": 1,
+                }
+            )
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_fixed(2),
+        retry=retry_if_result(lambda result: result.status_code == 429),
+    )  # noqa
+    def _send_order(self, order):
         # FETCH CHECKING_RESPONSE
         checking_response = self.trading_api.check_order(order=order)
 
@@ -300,24 +325,10 @@ class TradingOperator:
             confirmation_id = checking_response.confirmation_id
 
             # SEND CONFIRMATION
-            confirmation_response = self.trading_api.confirm_order(
+            return self.trading_api.confirm_order(
                 confirmation_id=confirmation_id,
                 order=order,
             )
-
-            self.order_confirmed = (
-                True
-                if confirmation_response
-                else logger.error("order not confirmed")
-            )
-
-            if self.order_confirmed:
-                self.doc_price.document("order_" + str(action_code)).set(
-                    {
-                        "date": str(datetime.now()),
-                        "pending": 1,
-                    }
-                )
 
         else:
             logger.critical("failed ordering")

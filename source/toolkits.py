@@ -23,8 +23,8 @@ def utc_to_cet(datetime_str):
     return datetime.strftime(cet, "%Y-%m-%dT%H:%M:%S")
 
 
-def decimalize(value, prec=".0001"):
-    return Decimal(value).quantize(Decimal(prec), rounding=ROUND_UP)
+def decimalize(value, prec=".0001", round=ROUND_UP):
+    return Decimal(value).quantize(Decimal(prec), rounding=round)
 
 
 def get_last_valuta_balance(content, key_name="description"):
