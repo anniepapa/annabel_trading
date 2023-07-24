@@ -59,30 +59,40 @@ class LivermoreTradingRule(TradingAnalyzor):
             f"diff buy euro: {diff_buy} between last price (foreign): "
             f"{self.prod_meta['last_price']}(euro: {last_price_in_euro}) "
             f"and the last buy price (foreign): {last_buy_foreign}."
-            f"(euro: {last_buy_price_in_euro})"
+            f"(euro: {decimalize(last_buy_price_in_euro)})"
         )
 
         return decimalize(diff_buy / last_buy_price_in_euro)
 
     def _get_ratio_diff_sell(self, last_price_in_euro):
-        price_info = self.prod_meta["highest_price_info"]
+        last_buy_price_in_euro = abs(
+            self.prod_meta["last_transaction_price"]["b"][
+                "price_in_base_currency"
+            ]
+        )
 
+        price_info = self.prod_meta["highest_price_info"]
         highest_foreign = decimalize(price_info.get("highest_foreign") or 0)
         highest_euro = decimalize(price_info.get("highest_euro") or 0)
 
-        diff_sell = self.prod_meta["last_price_in_euro"] - highest_euro
+        medium_check_point = (highest_euro + last_buy_price_in_euro) / 2
+
+        diff_sell = decimalize(last_price_in_euro - medium_check_point)
 
         logger.info(
             f"diff sell euro: {diff_sell} between last price (foreign): "
             f"{self.prod_meta['last_price']}(euro: {last_price_in_euro}) "
-            f"and the highest of today (foreign): "
-            f"{highest_foreign}(euro: {highest_euro})."
+            f"The medium check point in euro: "
+            f"{decimalize(medium_check_point)} in "
+            f"between the highest of today (foreign): {highest_foreign}"
+            f"(euro: {highest_euro}) and last buy in "
+            f"euro {decimalize(last_buy_price_in_euro)}"
         )
 
-        return decimalize(diff_sell / highest_euro)
+        return decimalize(diff_sell / medium_check_point)
 
     def analyze_trend(self):
-        self.checkpoint_up = self.ratio_checkpoint - Decimal("0.017")
+        self.checkpoint_up = self.ratio_checkpoint
         self.checkpoint_down = -self.ratio_checkpoint
 
         last_price_in_euro = abs(self.prod_meta["last_price_in_euro"])
@@ -147,12 +157,15 @@ class LivermoreTradingRule(TradingAnalyzor):
 
         earns = (last_price_in_euro - last_buy_price_in_euro) * qty
         fees = decimalize(trans_fee + autofx_fee)
-        net = decimalize(earns - fees * 2)
+        net_buy = decimalize(earns - fees)
+        net_sell = decimalize(earns - fees * 2)
 
         logger.info(
-            f"✍✍ Earning: {earns}, needs to pay: {fees*2}. Net: {net}. "
-            f"(last price in euro: {last_price_in_euro} - last buy in euro: "
-            f"{last_buy_price_in_euro}) * {qty} = earn: {earns}"
+            f"✍✍ Earning: {earns}, costs: {fees*2} (sell) or {fees} "
+            f"(buy). Net if sell: {net_sell}, if buy: {net_buy}. Earns "
+            f"are calculated using: (last price in euro: {last_price_in_euro}"
+            f" - last buy in euro: {last_buy_price_in_euro}) * {qty} "
+            f"= earn: {earns}"
         )
 
         if self.state not in (1, -1) and self.prod_meta.get("sell_order"):
@@ -176,10 +189,10 @@ class LivermoreTradingRule(TradingAnalyzor):
         #     )
         #     self.state = -1
 
-        elif self.state == -1 and net <= 0:
+        if self.state == -1 and net_sell <= 0:
             logger.info(
-                "🧛‍♂️🧛‍♂️🧛‍♂️ Calm down, each SELL costs money...you are "
-                "earning nothing but only losing money"
+                f"🧛‍♂️🧛‍♂️🧛‍♂️ Calm down, each SELL costs money...you are "
+                f"earning nothing but only losing money {net_sell}"
             )
 
             if self.prod_meta.get("sell_order"):
@@ -188,13 +201,21 @@ class LivermoreTradingRule(TradingAnalyzor):
                 )
             self.state = 0
 
-        elif self.state == 1 and net <= 0:
+        elif self.state == 1 and net_buy <= 0:
             logger.info(
                 f"🎃🧛‍♂️🧛‍♂️ It's up with ratio diff buy: "
-                f"{self.ratio_diff_buy} but earned: {net} < "
+                f"{self.ratio_diff_buy} but earned: {net_buy} < "
                 f"{fees} to pay. Hold it before a new buy"
             )
             self.state = 0
+
+        elif self.state != 1 and net_buy > 0:
+            logger.info(
+                f"🎃🧚‍♀️ 🧚‍♀️ It's up with ratio diff buy: "
+                f"{self.ratio_diff_buy} and earned: {net_buy} > "
+                f"{fees} to pay. Annabel is going to buy more"
+            )
+            self.state = 1
 
         else:
             logger.info("Verify if any case missing for risk management.")
