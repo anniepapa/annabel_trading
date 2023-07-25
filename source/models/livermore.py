@@ -57,7 +57,7 @@ class LivermoreTradingRule(TradingAnalyzor):
         ratio_diff_buy = decimalize(diff_buy / last_buy_price_in_euro)
 
         logger.info(
-            f"diff buy euro: {diff_buy} ({ratio_diff_buy}) between last "
+            f"diff buy euro: {diff_buy} ({ratio_diff_buy*100}%) between last "
             f"price (foreign): {self.prod_meta['last_price']}"
             f"(euro: {last_price_in_euro}) and the last buy price "
             f"(foreign): {last_buy_foreign}."
@@ -85,7 +85,7 @@ class LivermoreTradingRule(TradingAnalyzor):
         ratio_diff_sell = decimalize(diff_sell / medium_check_point)
 
         logger.info(
-            f"diff sell euro: {diff_sell} ({ratio_diff_sell}) between "
+            f"diff sell euro: {diff_sell} ({ratio_diff_sell*100}%) between "
             f"last price (foreign): {self.prod_meta['last_price']}"
             f"(euro: {last_price_in_euro}). The medium check point in euro: "
             f"{decimalize(medium_check_point)} in "
