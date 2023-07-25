@@ -206,12 +206,11 @@ class TradingOperator:
     def _check_pending_price(self, order):
         # Only when the order type is B
 
-        if Decimal(order["stop_price"]) - self.prod_meta["last_price"] > 0.02:
+        if Decimal(order["stop_price"]) - self.prod_meta["last_price"] > 0.015:
             logger.info(
                 f"🕵️‍♀️ last price: {self.prod_meta['last_price']} is "
                 f"lower than the trigger price: {order['stop_price']} "
                 f"of pending BUY order. Existing order will be deleted. "
-                f"A new order will be created with the last price."
             )
             self.trading_api.delete_order(order_id=order["id"])
             self.doc_price.document("order_0").set(
@@ -227,8 +226,9 @@ class TradingOperator:
             # self.order(action_type="B")
         else:
             logger.warning(
-                f"last price: {self.prod_meta['last_price']} is higher not "
-                f"higher enough than your trigger price: {order['stop_price']}"
+                f"last price: {self.prod_meta['last_price']} is higher but "
+                f"not higher enough than your trigger price: "
+                f"{order['stop_price']}"
             )
 
     def _self_order(self):

@@ -54,15 +54,17 @@ class LivermoreTradingRule(TradingAnalyzor):
             ]
         )
         diff_buy = decimalize(last_price_in_euro - last_buy_price_in_euro)
+        ratio_diff_buy = decimalize(diff_buy / last_buy_price_in_euro)
 
         logger.info(
-            f"diff buy euro: {diff_buy} between last price (foreign): "
-            f"{self.prod_meta['last_price']}(euro: {last_price_in_euro}) "
-            f"and the last buy price (foreign): {last_buy_foreign}."
+            f"diff buy euro: {diff_buy} ({ratio_diff_buy}) between last "
+            f"price (foreign): {self.prod_meta['last_price']}"
+            f"(euro: {last_price_in_euro}) and the last buy price "
+            f"(foreign): {last_buy_foreign}."
             f"(euro: {decimalize(last_buy_price_in_euro)})"
         )
 
-        return decimalize(diff_buy / last_buy_price_in_euro)
+        return ratio_diff_buy
 
     def _get_ratio_diff_sell(self, last_price_in_euro):
         last_buy_price_in_euro = abs(
@@ -80,18 +82,19 @@ class LivermoreTradingRule(TradingAnalyzor):
         )
 
         diff_sell = decimalize(last_price_in_euro - medium_check_point)
+        ratio_diff_sell = decimalize(diff_sell / medium_check_point)
 
         logger.info(
-            f"diff sell euro: {diff_sell} between last price (foreign): "
-            f"{self.prod_meta['last_price']}(euro: {last_price_in_euro}) "
-            f"The medium check point in euro: "
+            f"diff sell euro: {diff_sell} ({ratio_diff_sell}) between "
+            f"last price (foreign): {self.prod_meta['last_price']}"
+            f"(euro: {last_price_in_euro}). The medium check point in euro: "
             f"{decimalize(medium_check_point)} in "
             f"between the highest of today (foreign): {highest_foreign}"
             f"(euro: {highest_euro}) and last buy in "
             f"euro {decimalize(last_buy_price_in_euro)}"
         )
 
-        return decimalize(diff_sell / medium_check_point)
+        return ratio_diff_sell
 
     def analyze_trend(self):
         self.checkpoint_up = self.ratio_checkpoint
@@ -186,6 +189,20 @@ class LivermoreTradingRule(TradingAnalyzor):
                 order_id=self.prod_meta["sell_order"]["id"]
             )
 
+        if (
+            self.prod_meta.get("sell_order")
+            and meta["last_price"] > self.prod_meta["sell_order"]["price"]
+        ):  # noqa
+            logger.info(
+                f"🧛‍♂️🧨🧛‍♂️ the last price (foreign): {meta['last_price']}"
+                f" is already higher than the sell price: "
+                f"{self.prod_meta['sell_order']['price']} "
+                f"the existing SELL order will be deleted."
+            )
+            self.trading_api.delete_order(
+                order_id=self.prod_meta["sell_order"]["id"]
+            )
+
         # TODO: bug , cannot handle well if manual buy very low price in the middle of the day  # noqa
         # False negative
 
@@ -225,6 +242,18 @@ class LivermoreTradingRule(TradingAnalyzor):
                 f"{fees} to pay. Annabel is going to buy more"
             )
             self.state = 1
+
+        elif (
+            self.ratio_diff_sell < 0
+            and abs(self.ratio_diff_sell) > abs(self.ratio_diff_buy)
+            and net_sell > 0
+        ):  # noqa
+            logger.info(
+                f"🎃🎃🧛‍♂️ It's down with ratio diff sell: "
+                f"{self.ratio_diff_sell} abs higher than ratio diff buy: "
+                f"{self.ratio_diff_buy} but earned: {net_sell} > 0. Sell it."
+            )
+            self.state = -1
 
         else:
             logger.info("Verify if any case missing for risk management.")
