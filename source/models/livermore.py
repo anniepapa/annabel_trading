@@ -146,6 +146,8 @@ class LivermoreTradingRule(TradingAnalyzor):
         autofx_fee = abs(
             meta["last_transaction_price"]["b"]["autofx_rate_in_euro"]
         )
+        last_buy_qty = abs(meta["last_transaction_price"]["b"]["quantity"])
+
         qty = meta["hold_qty"]
 
         last_buy_price = abs(
@@ -160,7 +162,9 @@ class LivermoreTradingRule(TradingAnalyzor):
             last_buy_price / (last_buy_fx_rate or 1)
         )
 
-        earns = (last_price_in_euro - last_buy_price_in_euro) * qty
+        earns = (last_price_in_euro - last_buy_price_in_euro) * int(
+            last_buy_qty
+        )
         fees = decimalize(trans_fee + autofx_fee)
         net_buy = decimalize(earns - fees)
         net_sell = decimalize(earns - fees * 2)
@@ -169,8 +173,8 @@ class LivermoreTradingRule(TradingAnalyzor):
             f"✍✍ Earning: {earns}, costs: {fees*2} (sell) or {fees} "
             f"(buy). Net if sell: {net_sell}, if buy: {net_buy}. Earns "
             f"are calculated using: (last price in euro: {last_price_in_euro}"
-            f" - last buy in euro: {last_buy_price_in_euro}) * {qty} "
-            f"= earn: {earns}"
+            f" - last buy in euro: {last_buy_price_in_euro}) * last buy "
+            f"qty: {last_buy_qty} from total qty {qty} = earn: {earns}"
         )
 
         if self.state not in (1, -1) and self.prod_meta.get("sell_order"):
