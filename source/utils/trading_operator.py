@@ -291,17 +291,23 @@ class TradingOperator:
             price = self.prod_meta["last_price"] + price_diff
             size = self.prod_meta["capacity"]
 
+        stop_price = decimalize(stop_price, prec=".01", round=ROUND_DOWN)
+        price = decimalize(price, prec=".01", round=ROUND_DOWN)
+
         logger.info(
             f"🤖 Annabel is ordering: {action_type} for {size}: "
             f"{self.prod_meta['name']} on {price} triggered on stop price: "
-            f"{stop_price} base on last price: {self.prod_meta['last_price']}"
+            f"{stop_price} base on last price: {self.prod_meta['last_price']} "
+            f"and cashable balance: {self.prod_meta['cashable']} "
+            f"from the 20% position of the last balance: "
+            f"{self.prod_meta['last_balance']}"
         )
 
         order = Order(
             action=action,
             order_type=Order.OrderType.STOP_LIMIT,
-            stop_price=decimalize(stop_price, prec=".01", round=ROUND_DOWN),
-            price=decimalize(price, prec=".01", round=ROUND_DOWN),
+            stop_price=stop_price,
+            price=price,
             product_id=int(self.prod_meta["id"]),
             size=size,
             time_type=Order.TimeType.GOOD_TILL_DAY,

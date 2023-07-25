@@ -233,14 +233,6 @@ class LivermoreTradingRule(TradingAnalyzor):
             trading_operator (_type_): _description_
         """
         if self.state == 1 and self.capacity >= 1:
-            logger.info(
-                f"🤖 Annabel is ordering {self.capacity}: "
-                f"{self.prod_meta['name']} on position: "
-                f"{self.prod_meta['last_price_in_euro']} base on "
-                f"cashable balance: {self.prod_meta['cashable']} "
-                f"from the 20% position of the last balance: "
-                f"{self.prod_meta['last_balance']}"
-            )
             trading_operator.order(action_type="B")
 
         elif self.state == -1:
