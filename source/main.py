@@ -2,6 +2,7 @@ import json
 import os
 from fire import Fire
 from decimal import Decimal
+from multiprocessing import Pool
 
 from my_logger import logger
 from toolkits import utc_to_cet, decimalize
@@ -44,13 +45,7 @@ def check_annabel_toy():
         raise SystemExit
 
 
-def main(stock_name, code, ratio_checkpoint="0.1"):
-    logger.info(f"Start automatic trading for the stock: {stock_name}")
-    check_annabel_toy()
-
-    with open("config/config.json") as config_file:
-        config_dict = json.load(config_file)
-
+def processing(config_dict, stock_name, code, ratio_checkpoint):
     with DegiroConnection(config_dict) as trading_api:
         trading_operator = TradingOperator(stock_name, code, trading_api)
         prod_consumer = ProductConsumer(config_dict["user_token"])
@@ -81,9 +76,25 @@ def main(stock_name, code, ratio_checkpoint="0.1"):
             }
         )
         logger.info(f"👉👉 Meta after livermore: {trading_operator.prod_meta}")
-
         livermore.review_decision(trading_operator.prod_meta)
         livermore.act_on_capacity(trading_operator)
+
+
+def main():
+    check_annabel_toy()
+    num_processes = 3
+
+    with open("config/config.json") as config_file:
+        config_dict = json.load(config_file)
+
+    with Pool(num_processes) as pool:
+        processes = [
+            (config_dict, "D-WAVE", "QBTS", "0.1"),
+            (config_dict, "Ingredion", "INGR", "0.1"),
+            (config_dict, "IONQ INC", "IONQ", "0.1"),
+        ]
+
+        pool.starmap(processing, processes)
 
 
 if __name__ == "__main__":
