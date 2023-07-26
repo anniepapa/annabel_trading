@@ -120,7 +120,7 @@ class LivermoreTradingRule(TradingAnalyzor):
 
         if self.state == 1:
             logger.info(
-                f"💹 Livermore: The last price of {self.prod_meta['name']} "
+                f"👸💹 Livermore: The last price of {self.prod_meta['name']} "
                 f"has 🚀: {self.ratio_diff_buy*100}% up against the "
                 f"up point: {self.checkpoint_up*100}%. Time to buy 20% more. "
                 f"Max to add: {self.capacity} base on 20% cashable position."
@@ -128,14 +128,14 @@ class LivermoreTradingRule(TradingAnalyzor):
 
         elif self.state == -1:
             logger.info(
-                f"🈹 Livermore: The last price of {self.prod_meta['name']} "
+                f"👸🈹 Livermore: The last price of {self.prod_meta['name']} "
                 f"has 💥: {self.ratio_diff_sell*100}% down against the "
                 f"down point: {self.checkpoint_down*100}%. Time to sell all."
             )
 
         else:
             logger.info(
-                f"🧭 Livermore: Price change of {self.prod_meta['name']}: "
+                f"👸🧭 Livermore: Price change of {self.prod_meta['name']}: "
                 f"{self.ratio_diff_sell*100}% ~ {self.ratio_diff_buy*100}% "
                 f"against the checkpoint: {self.checkpoint_down*100}% ~ "
                 f"{self.checkpoint_up*100}%. No inflection point, "
@@ -223,10 +223,6 @@ class LivermoreTradingRule(TradingAnalyzor):
                 )
             self.state = 0
 
-        elif self.state == 1 and meta["buy_exists"]:
-            logger.info("a buy exists, Will not create a new buy")
-            self.state = 0
-
         elif self.state == 1 and net_buy <= 0:
             logger.info(
                 f"🎃🧛‍♂️🧛‍♂️ It's up with ratio diff buy: "
@@ -235,13 +231,13 @@ class LivermoreTradingRule(TradingAnalyzor):
             )
             self.state = 0
 
-        elif self.state != 1 and net_buy > 0:
-            logger.info(
-                f"🎃🧚‍♀️ 🧚‍♀️ It's up with ratio diff buy: "
-                f"{self.ratio_diff_buy} and earned: {net_buy} > "
-                f"{fees} to pay. Annabel is going to buy more"
-            )
-            self.state = 1
+        # elif self.state != 1 and net_buy > 0:
+        #     logger.info(
+        #         f"🎃🧚‍♀️ 🧚‍♀️ It's up with ratio diff buy: "
+        #         f"{self.ratio_diff_buy} and earned: {net_buy}. "
+        #         f"Annabel is going to buy more"
+        #     )
+        #     self.state = 1
 
         elif (
             self.ratio_diff_sell < 0
@@ -257,6 +253,10 @@ class LivermoreTradingRule(TradingAnalyzor):
 
         else:
             logger.info("Verify if any case missing for risk management.")
+
+        if meta["buy_exists"] and self.state == 1:
+            logger.info("a buy exists, Will not create a new buy")
+            self.state = 0
 
     # @TODO @WIP
     def act_on_capacity(self, trading_operator):
