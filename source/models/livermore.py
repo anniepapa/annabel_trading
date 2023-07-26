@@ -180,28 +180,24 @@ class LivermoreTradingRule(TradingAnalyzor):
             f"qty: {last_buy_qty} from total qty {qty} = earn: {earns}"
         )
 
-        if self.state not in (1, -1) and self.prod_meta.get("sell_order"):
+        if self.state not in (1, -1) and meta.get("sell_order"):
             logger.info(
                 "🧛‍♂️🧛‍♂️🧛‍♂️ Calm down, each SELL costs money...livermore "
                 "says hold it, the existing SELL order will be deleted."
             )
-            self.trading_api.delete_order(
-                order_id=self.prod_meta["sell_order"]["id"]
-            )
+            self.trading_api.delete_order(order_id=meta["sell_order"]["id"])
 
         if (
-            self.prod_meta.get("sell_order")
-            and meta["last_price"] > self.prod_meta["sell_order"]["price"]
+            meta.get("sell_order")
+            and meta["last_price"] > meta["sell_order"]["price"]
         ):  # noqa
             logger.info(
                 f"🧛‍♂️🧨🧛‍♂️ the last price (foreign): {meta['last_price']}"
                 f" is already higher than the sell price: "
-                f"{self.prod_meta['sell_order']['price']} "
+                f"{meta['sell_order']['price']} "
                 f"the existing SELL order will be deleted."
             )
-            self.trading_api.delete_order(
-                order_id=self.prod_meta["sell_order"]["id"]
-            )
+            self.trading_api.delete_order(order_id=meta["sell_order"]["id"])
 
         # TODO: bug , cannot handle well if manual buy very low price in the middle of the day  # noqa
         # False negative
@@ -221,10 +217,14 @@ class LivermoreTradingRule(TradingAnalyzor):
                 f"earning nothing but only losing money {net_sell}"
             )
 
-            if self.prod_meta.get("sell_order"):
+            if meta.get("sell_order"):
                 self.trading_api.delete_order(
-                    order_id=self.prod_meta["sell_order"]["id"]
+                    order_id=meta["sell_order"]["id"]
                 )
+            self.state = 0
+
+        elif self.state == 1 and meta["buy_exists"]:
+            logger.info("a buy exists, Will not create a new buy")
             self.state = 0
 
         elif self.state == 1 and net_buy <= 0:

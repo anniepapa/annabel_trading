@@ -106,6 +106,7 @@ class TradingOperator:
                     "stock_currency": prod["currency"],
                     "close_price": decimalize(prod["closePrice"], prec=".01"),
                     "close_price_date": prod["closePriceDate"],
+                    "buy_exists": 0,
                 }
                 break
         else:
@@ -154,6 +155,7 @@ class TradingOperator:
                     f"{order['product']} has a pending (manually created "
                     f"if pending buy status is 0) order buy: {order}"
                 )
+                self.prod_meta["buy_exists"] = 1
                 self._check_pending_price(order)
                 self.doc_price.document("price").set(
                     {
@@ -213,6 +215,7 @@ class TradingOperator:
                 f"of pending BUY order. Existing order will be deleted. "
             )
             self.trading_api.delete_order(order_id=order["id"])
+            self.prod_meta["buy_exists"] = 0
             self.doc_price.document("order_0").set(
                 {
                     "date": str(datetime.now()),
