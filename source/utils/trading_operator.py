@@ -183,6 +183,7 @@ class TradingOperator:
             if (
                 str(order["product_id"]) == self.prod_meta["id"]
                 and order["action"]
+                and order["stop_price"] != 0
             ):  # noqa SELL
                 self.prod_meta["sell_order"] = order
                 break
@@ -228,11 +229,7 @@ class TradingOperator:
             # self.prod_meta["capacity"] = 1
             # self.order(action_type="B")
         else:
-            logger.warning(
-                f"last price: {self.prod_meta['last_price']} is higher but "
-                f"not higher enough than your trigger price: "
-                f"{order['stop_price']}"
-            )
+            pass
 
     def _self_order(self):
         minor_position = Decimal("0.15") * self.prod_meta["last_balance"]
@@ -247,7 +244,7 @@ class TradingOperator:
         else:
             logger.warning(
                 f"Zero hold, no pending order, also insufficient "
-                f"20% cashable: {minor_position} to buy 1 {last_price}. \n"
+                f"20% cashable: {minor_position} to buy 1 {last_price}. "
                 f"🎈🎈 Annabel will do nothing and exit."
             )
 

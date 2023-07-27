@@ -57,8 +57,8 @@ class LivermoreTradingRule(TradingAnalyzor):
         ratio_diff_buy = decimalize(diff_buy / last_buy_price_in_euro)
 
         logger.info(
-            f"diff buy euro: {diff_buy} ({ratio_diff_buy*100}%) between last "
-            f"price (foreign): {self.prod_meta['last_price']}"
+            f"💰💰 diff buy euro: {diff_buy} ({ratio_diff_buy*100}%) "
+            f"between last price (foreign): {self.prod_meta['last_price']}"
             f"(euro: {last_price_in_euro}) and the last buy price "
             f"(foreign): {last_buy_foreign}."
             f"(euro: {decimalize(last_buy_price_in_euro)})"
@@ -85,7 +85,7 @@ class LivermoreTradingRule(TradingAnalyzor):
         ratio_diff_sell = decimalize(diff_sell / medium_check_point)
 
         logger.info(
-            f"diff sell euro: {diff_sell} ({ratio_diff_sell*100}%) between "
+            f"💰💰 diff sell euro: {diff_sell} ({ratio_diff_sell*100}%) between "
             f"last price (foreign): {self.prod_meta['last_price']}"
             f"(euro: {last_price_in_euro}). The medium check point in euro: "
             f"{decimalize(medium_check_point)} in "
@@ -135,14 +135,16 @@ class LivermoreTradingRule(TradingAnalyzor):
 
         else:
             logger.info(
-                f"👸🧭 Livermore: Price change of {self.prod_meta['name']}: "
+                f"👸⏳⏳ Livermore: Price change of {self.prod_meta['name']}: "
                 f"{self.ratio_diff_sell*100}% ~ {self.ratio_diff_buy*100}% "
                 f"against the checkpoint: {self.checkpoint_down*100}% ~ "
                 f"{self.checkpoint_up*100}%. No inflection point, "
                 f"hold it for now."
             )
 
-    def review_decision(self, meta):
+    def review_decision(self, trading_operator):
+        meta = trading_operator.prod_meta
+
         trans_fee = abs(
             meta["last_transaction_price"]["b"]["trans_fee_in_euro"]
         )
@@ -173,7 +175,7 @@ class LivermoreTradingRule(TradingAnalyzor):
         net_sell = decimalize(earns - fees * 2)
 
         logger.info(
-            f"✍✍ Earning: {earns}, costs: {fees*2} (sell) or {fees} "
+            f"📈📉💸 Earning: {earns}, costs: {fees*2} (sell) or {fees} "
             f"(buy). Net if sell: {net_sell}, if buy: {net_buy}. Earns "
             f"are calculated using: (last price in euro: {last_price_in_euro}"
             f" - last buy in euro: {last_buy_price_in_euro}) * last buy "
@@ -185,7 +187,7 @@ class LivermoreTradingRule(TradingAnalyzor):
                 "🧛‍♂️🧛‍♂️🧛‍♂️ Calm down, each SELL costs money...livermore "
                 "says hold it, the existing SELL order will be deleted."
             )
-            self.trading_api.delete_order(order_id=meta["sell_order"]["id"])
+            trading_operator.delete_order(order_id=meta["sell_order"]["id"])
 
         if (
             meta.get("sell_order")
@@ -197,7 +199,7 @@ class LivermoreTradingRule(TradingAnalyzor):
                 f"{meta['sell_order']['price']} "
                 f"the existing SELL order will be deleted."
             )
-            self.trading_api.delete_order(order_id=meta["sell_order"]["id"])
+            trading_operator.delete_order(order_id=meta["sell_order"]["id"])
 
         # TODO: bug , cannot handle well if manual buy very low price in the middle of the day  # noqa
         # False negative
@@ -218,7 +220,7 @@ class LivermoreTradingRule(TradingAnalyzor):
             )
 
             if meta.get("sell_order"):
-                self.trading_api.delete_order(
+                trading_operator.delete_order(
                     order_id=meta["sell_order"]["id"]
                 )
             self.state = 0

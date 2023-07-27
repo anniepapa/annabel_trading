@@ -47,17 +47,13 @@ class FinancialProductConsumer:
 
         self.quotecast_api.subscribe(request=request)
 
-        logger.info(
-            f"vwdIds: {vwdid} have been subscribed by {self.quotecast_api}"
-        )
-
         quotecast_parser.put_quotecast(
             quotecast=self.quotecast_api.fetch_data()
         )
         self.realtime_dict = quotecast_parser.ticker_dict[vwdid]
         self.realtime_df = quotecast_parser.ticker_df
 
-        logger.info(f"The price of {vwdid} have been fetched")
+        logger.info(f"The price of vwdid: {vwdid} have been fetched")
 
     def _connect(self, user_token):
         quotecast_api = QuotecastAPI(user_token=user_token)
